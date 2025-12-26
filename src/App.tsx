@@ -9,6 +9,17 @@ interface Phrase {
   JA: string
 }
 
+interface UnitFile {
+  unitNumber: string
+  filename: string
+}
+
+// 利用可能なユニットファイルのリスト
+const UNIT_FILES: UnitFile[] = [
+  { unitNumber: '3', filename: 'unit3.csv' },
+  { unitNumber: '4', filename: 'unit4.csv' },
+]
+
 function App() {
   const [phrases, setPhrases] = useState<Phrase[]>([])
   const [units, setUnits] = useState<string[]>([])
@@ -16,33 +27,79 @@ function App() {
   const [currentPhrases, setCurrentPhrases] = useState<Phrase[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showEnglish, setShowEnglish] = useState(false)
+  const [isRandom, setIsRandom] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-  // CSVファイルを読み込み
+  // 複数のCSVファイルを読み込み
   useEffect(() => {
-    fetch('/phrase.csv')
-      .then(response => response.text())
-      .then(csvText => {
-        Papa.parse<Phrase>(csvText, {
-          header: true,
-          complete: (results) => {
-            const data = results.data.filter(row => row.Unit && row.EN && row.JA)
-            setPhrases(data)
-            
-            // ユニット一覧を抽出
-            const uniqueUnits = Array.from(new Set(data.map(p => p.Unit))).sort()
-            setUnits(uniqueUnits)
-          }
-        })
-      })
+    const loadAllUnits = async () => {
+      const allPhrases: Phrase[] = []
+      
+      for (const unitFile of UNIT_FILES) {
+        try {
+          const response = await fetch(`/${unitFile.filename}`)
+          const csvText = await response.text()
+          
+          await new Promise<void>((resolve) => {
+            Papa.parse<{ No: string; EN: string; JA: string }>(csvText, {
+              header: true,
+              complete: (results) => {
+                const unitPhrases = results.data
+                  .filter(row => row.EN && row.JA)
+                  .map(row => ({
+                    Unit: unitFile.unitNumber,
+                    No: row.No,
+                    EN: row.EN,
+                    JA: row.JA
+                  }))
+                allPhrases.push(...unitPhrases)
+                resolve()
+              }
+            })
+          })
+        } catch (error) {
+          console.error(`Failed to load ${unitFile.filename}:`, error)
+        }
+      }
+      
+      setPhrases(allPhrases)
+      
+      // ユニット一覧を抽出
+      const uniqueUnits = Array.from(new Set(allPhrases.map(p => p.Unit))).sort()
+      setUnits(uniqueUnits)
+      setLoading(false)
+    }
+    
+    loadAllUnits()
   }, [])
 
   // ユニット選択時
   const handleSelectUnit = (unit: string) => {
     const unitPhrases = phrases.filter(p => p.Unit === unit)
-    setCurrentPhrases(unitPhrases)
+    const orderedPhrases = isRandom 
+      ? [...unitPhrases].sort(() => Math.random() - 0.5)
+      : unitPhrases
+    setCurrentPhrases(orderedPhrases)
     setSelectedUnit(unit)
     setCurrentIndex(0)
     setShowEnglish(false)
+  }
+
+  // ランダムモード切り替え
+  const toggleRandomMode = () => {
+    const newRandomMode = !isRandom
+    setIsRandom(newRandomMode)
+    
+    // すでにユニット選択済みの場合は再シャッフル
+    if (selectedUnit) {
+      const unitPhrases = phrases.filter(p => p.Unit === selectedUnit)
+      const orderedPhrases = newRandomMode
+        ? [...unitPhrases].sort(() => Math.random() - 0.5)
+        : unitPhrases
+      setCurrentPhrases(orderedPhrases)
+      setCurrentIndex(0)
+      setShowEnglish(false)
+    }
   }
 
   // クリックで英訳表示/次のフレーズへ
@@ -71,18 +128,43 @@ function App() {
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl font-bold text-center mb-8 text-indigo-900">Flash Phrase</h1>
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4 text-gray-800">ユニットを選択してください</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {units.map(unit => (
-                <button
-                  key={unit}
-                  onClick={() => handleSelectUnit(unit)}
-                  className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-4 px-6 rounded-lg transition duration-200 transform hover:scale-105"
-                >
-                  Unit {unit}
-                </button>
-              ))}
-            </div>
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto"></div>
+                <p className="mt-4 text-gray-600">読み込み中...</p>
+              </div>
+            ) : (
+              <>
+                <h2 className="text-2xl font-semibold mb-4 text-gray-800">ユニットを選択してください</h2>
+                
+                {/* ランダムモード切り替え */}
+                <div className="mb-6 flex items-center justify-center">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isRandom}
+                      onChange={toggleRandomMode}
+                      className="w-5 h-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <span className="ml-3 text-lg text-gray-700 font-medium">
+                      🔀 ランダム表示
+                    </span>
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {units.map(unit => (
+                    <button
+                      key={unit}
+                      onClick={() => handleSelectUnit(unit)}
+                      className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-4 px-6 rounded-lg transition duration-200 transform hover:scale-105"
+                    >
+                      Unit {unit}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -102,9 +184,20 @@ function App() {
           >
             ← ユニット選択に戻る
           </button>
-          <h1 className="text-2xl font-bold text-indigo-900">
-            Unit {selectedUnit} - {currentIndex + 1} / {currentPhrases.length}
-          </h1>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={toggleRandomMode}
+              className={`${
+                isRandom ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 hover:bg-gray-500'
+              } text-white font-semibold py-2 px-4 rounded-lg transition duration-200`}
+              title="ランダムモード切り替え"
+            >
+              🔀 {isRandom ? 'ON' : 'OFF'}
+            </button>
+            <h1 className="text-2xl font-bold text-indigo-900">
+              Unit {selectedUnit} - {currentIndex + 1} / {currentPhrases.length}
+            </h1>
+          </div>
         </div>
 
         <div 
