@@ -11,13 +11,13 @@ interface Phrase {
 
 interface UnitFile {
   unitNumber: string
-  filename: string
+  filepath: string
 }
 
 // 利用可能なユニットファイルのリスト
 const UNIT_FILES: UnitFile[] = [
-  { unitNumber: '3', filename: 'unit3.csv' },
-  { unitNumber: '4', filename: 'unit4.csv' },
+  { unitNumber: '3', filepath: '/flash-phrase/unit3.csv' },
+  { unitNumber: '4', filepath: '/flash-phrase/unit4.csv' },
 ]
 
 function App() {
@@ -37,7 +37,7 @@ function App() {
       
       for (const unitFile of UNIT_FILES) {
         try {
-          const response = await fetch(`/${unitFile.filename}`)
+          const response = await fetch(unitFile.filepath)
           const csvText = await response.text()
           
           await new Promise<void>((resolve) => {
@@ -58,7 +58,7 @@ function App() {
             })
           })
         } catch (error) {
-          console.error(`Failed to load ${unitFile.filename}:`, error)
+          console.error(`Failed to load ${unitFile.filepath}:`, error)
         }
       }
       
