@@ -3,35 +3,35 @@ import Papa from 'papaparse'
 import './App.css'
 
 interface Phrase {
-  Unit: string
+  Unit: number
   No: string
   EN: string
   JA: string
 }
 
 interface UnitFile {
-  unitNumber: string
+  unitNumber: number
   filepath: string
 }
 
 // 利用可能なユニットファイルのリスト
 const UNIT_FILES: UnitFile[] = [
-  { unitNumber: '1', filepath: '/flash-phrase/unit1.csv' },
-  { unitNumber: '2', filepath: '/flash-phrase/unit2.csv' },
-  { unitNumber: '3', filepath: '/flash-phrase/unit3.csv' },
-  { unitNumber: '4', filepath: '/flash-phrase/unit4.csv' },
-  { unitNumber: '5', filepath: '/flash-phrase/unit5.csv' },
-  { unitNumber: '6', filepath: '/flash-phrase/unit6.csv' },
-  { unitNumber: '7', filepath: '/flash-phrase/unit7.csv' },
-  { unitNumber: '8', filepath: '/flash-phrase/unit8.csv' },
-  { unitNumber: '9', filepath: '/flash-phrase/unit9.csv' },
-  { unitNumber: '10', filepath: '/flash-phrase/unit10.csv' },
+  { unitNumber: 1, filepath: '/flash-phrase/unit1.csv' },
+  { unitNumber: 2, filepath: '/flash-phrase/unit2.csv' },
+  { unitNumber: 3, filepath: '/flash-phrase/unit3.csv' },
+  { unitNumber: 4, filepath: '/flash-phrase/unit4.csv' },
+  { unitNumber: 5, filepath: '/flash-phrase/unit5.csv' },
+  { unitNumber: 6, filepath: '/flash-phrase/unit6.csv' },
+  { unitNumber: 7, filepath: '/flash-phrase/unit7.csv' },
+  { unitNumber: 8, filepath: '/flash-phrase/unit8.csv' },
+  { unitNumber: 9, filepath: '/flash-phrase/unit9.csv' },
+  { unitNumber: 10, filepath: '/flash-phrase/unit10.csv' },
 ]
 
 function App() {
   const [phrases, setPhrases] = useState<Phrase[]>([])
-  const [units, setUnits] = useState<string[]>([])
-  const [selectedUnit, setSelectedUnit] = useState<string | null>(null)
+  const [units, setUnits] = useState<number[]>([])
+  const [selectedUnit, setSelectedUnit] = useState<number | null>(null)
   const [currentPhrases, setCurrentPhrases] = useState<Phrase[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showEnglish, setShowEnglish] = useState(false)
@@ -73,8 +73,8 @@ function App() {
       console.log({allPhrases})
       setPhrases(allPhrases)
       
-      // ユニット一覧を抽出
-      const uniqueUnits = Array.from(new Set(allPhrases.map(p => p.Unit))).sort()
+      // ユニット一覧を抽出（数値としてソート）
+      const uniqueUnits = Array.from(new Set(allPhrases.map(p => p.Unit))).sort((a, b) => a - b)
       setUnits(uniqueUnits)
       setLoading(false)
     }
@@ -83,7 +83,7 @@ function App() {
   }, [])
 
   // ユニット選択時
-  const handleSelectUnit = (unit: string) => {
+  const handleSelectUnit = (unit: number) => {
     const unitPhrases = phrases.filter(p => p.Unit === unit)
     const orderedPhrases = isRandom 
       ? [...unitPhrases].sort(() => Math.random() - 0.5)
