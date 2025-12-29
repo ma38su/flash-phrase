@@ -145,7 +145,7 @@ function App() {
   // ユニット選択前画面
   if (!selectedUnit) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 p-8">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl font-bold text-center mb-8 text-indigo-900">Quick Response</h1>
           <div className="bg-white rounded-lg shadow-lg p-6">
@@ -177,7 +177,7 @@ function App() {
                 <div className="mb-6">
                   <button
                     onClick={handleSelectAllRandom}
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 px-6 rounded-lg transition duration-200 transform hover:scale-105 shadow-lg"
+                    className="w-full bg-linear-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 px-6 rounded-lg transition duration-200 transform hover:scale-105 shadow-lg"
                   >
                     🎲 全ユニットをランダムに学習
                   </button>
@@ -206,7 +206,7 @@ function App() {
   const currentPhrase = currentPhrases[currentIndex]
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <button
