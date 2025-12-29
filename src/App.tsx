@@ -16,6 +16,8 @@ interface UnitFile {
 
 // 利用可能なユニットファイルのリスト
 const UNIT_FILES: UnitFile[] = [
+  { unitNumber: '1', filepath: '/flash-phrase/unit1.csv' },
+  { unitNumber: '2', filepath: '/flash-phrase/unit2.csv' },
   { unitNumber: '3', filepath: '/flash-phrase/unit3.csv' },
   { unitNumber: '4', filepath: '/flash-phrase/unit4.csv' },
 ]
@@ -62,6 +64,7 @@ function App() {
         }
       }
       
+      console.log({allPhrases})
       setPhrases(allPhrases)
       
       // ユニット一覧を抽出
