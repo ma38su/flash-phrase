@@ -24,14 +24,14 @@ const UNIT_FILES: UnitFile[] = [
   { unitNumber: 6, filepath: '/flash-phrase/unit6.csv' },
   { unitNumber: 7, filepath: '/flash-phrase/unit7.csv' },
   { unitNumber: 8, filepath: '/flash-phrase/unit8.csv' },
-  { unitNumber: 9, filepath: '/flash-phrase/unit9.csv' },
-  { unitNumber: 10, filepath: '/flash-phrase/unit10.csv' },
+  // { unitNumber: 9, filepath: '/flash-phrase/unit9.csv' },
+  // { unitNumber: 10, filepath: '/flash-phrase/unit10.csv' },
 ]
 
 function App() {
   const [phrases, setPhrases] = useState<Phrase[]>([])
   const [units, setUnits] = useState<number[]>([])
-  const [selectedUnit, setSelectedUnit] = useState<number | null>(null)
+  const [selectedUnit, setSelectedUnit] = useState<number | null | 'all'>(null)
   const [currentPhrases, setCurrentPhrases] = useState<Phrase[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showEnglish, setShowEnglish] = useState(false)
@@ -82,13 +82,24 @@ function App() {
   }, [])
 
   // ユニット選択時
-  const handleSelectUnit = (unit: number) => {
-    const unitPhrases = phrases.filter(p => p.Unit === unit)
+  const handleSelectUnit = (unit: number | 'all') => {
+    const unitPhrases = unit === 'all' 
+      ? phrases 
+      : phrases.filter(p => p.Unit === unit)
     const orderedPhrases = isRandom 
       ? [...unitPhrases].sort(() => Math.random() - 0.5)
       : unitPhrases
     setCurrentPhrases(orderedPhrases)
     setSelectedUnit(unit)
+    setCurrentIndex(0)
+    setShowEnglish(false)
+  }
+
+  // 全フレーズをランダムに選択
+  const handleSelectAllRandom = () => {
+    const shuffledPhrases = [...phrases].sort(() => Math.random() - 0.5)
+    setCurrentPhrases(shuffledPhrases)
+    setSelectedUnit('all')
     setCurrentIndex(0)
     setShowEnglish(false)
   }
@@ -100,7 +111,9 @@ function App() {
     
     // すでにユニット選択済みの場合は再シャッフル
     if (selectedUnit) {
-      const unitPhrases = phrases.filter(p => p.Unit === selectedUnit)
+      const unitPhrases = selectedUnit === 'all'
+        ? phrases
+        : phrases.filter(p => p.Unit === selectedUnit)
       const orderedPhrases = newRandomMode
         ? [...unitPhrases].sort(() => Math.random() - 0.5)
         : unitPhrases
@@ -160,6 +173,16 @@ function App() {
                   </label>
                 </div>
 
+                {/* 全ユニットランダムボタン */}
+                <div className="mb-6">
+                  <button
+                    onClick={handleSelectAllRandom}
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 px-6 rounded-lg transition duration-200 transform hover:scale-105 shadow-lg"
+                  >
+                    🎲 全ユニットをランダムに学習
+                  </button>
+                </div>
+
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {units.map(unit => (
                     <button
@@ -203,7 +226,9 @@ function App() {
               🔀 {isRandom ? 'ON' : 'OFF'}
             </button>
             <h1 className="text-2xl font-bold text-indigo-900">
-              Unit {selectedUnit} - {currentIndex + 1} / {currentPhrases.length}
+              {selectedUnit === 'all' 
+                ? `全ユニット (Unit ${currentPhrase.Unit})` 
+                : `Unit ${selectedUnit}`} - {currentIndex + 1} / {currentPhrases.length}
             </h1>
           </div>
         </div>
