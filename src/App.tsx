@@ -70,7 +70,6 @@ function App() {
         }
       }
       
-      console.log({allPhrases})
       setPhrases(allPhrases)
       
       // ユニット一覧を抽出（数値としてソート）
