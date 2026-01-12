@@ -54,6 +54,11 @@ function App() {
 
   // URLから状態を復元する関数
   const restoreStateFromURL = () => {
+    if (phrases.length === 0) {
+      // フレーズがまだ読み込まれていない場合は処理しない
+      return;
+    }
+    
     const path = window.location.pathname.replace('/flash-phrase', '').replace(/^\/$/, '');
     const searchParams = new URLSearchParams(window.location.search);
     
@@ -169,25 +174,30 @@ function App() {
       // ユニット一覧を抽出（数値としてソート）
       const uniqueUnits = Array.from(new Set(allPhrases.map(p => p.Unit))).sort((a, b) => a - b)
       setUnits(uniqueUnits)
-      setPhrases(allPhrases)
       setLoading(false)
-      
-      // URLから状態を復元
-      setTimeout(() => restoreStateFromURL(), 0)
     }
     
     loadAllUnits()
   }, [])
 
+  // phrasesが読み込まれた後にURL状態を復元
+  useEffect(() => {
+    if (phrases.length > 0 && !loading) {
+      restoreStateFromURL();
+    }
+  }, [phrases, loading]);
+
   // ブラウザの戻る/進むボタンに対応
   useEffect(() => {
     const handlePopState = () => {
-      restoreStateFromURL();
+      if (phrases.length > 0) {
+        restoreStateFromURL();
+      }
     };
     
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [phrases]);
 
   // selectedUnit変更時にURLを更新
   useEffect(() => {
