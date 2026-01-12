@@ -1,0 +1,123 @@
+import React from 'react';
+import { IconArrowLeft, IconArrowRight, IconVolume, IconRefresh } from '@tabler/icons-react';
+
+interface Phrase {
+  EN: string;
+  JA: string;
+  Unit: number;
+}
+
+interface Props {
+  phrase: Phrase;
+  showEnglish: boolean;
+  reverseMode: boolean;
+  onClick: () => void;
+  onSpeak: (text: string) => void;
+  onPrev: () => void;
+  total: number;
+  index: number;
+  unitLabel: string;
+  onBack: () => void;
+  onShuffle: () => void;
+}
+
+const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick, onSpeak, onPrev, total, index, unitLabel, onBack, onShuffle }) => (
+  <div>
+    <div className="flex items-center mb-6 gap-4">
+      <button
+        onClick={onBack}
+        className="bg-gray-700 hover:bg-gray-600 text-gray-100 font-semibold py-2 px-4 rounded-sm transition duration-200 mr-2 shadow-md"
+      >
+        ← ユニット選択に戻る
+      </button>
+      <h2 className="text-2xl font-bold text-gray-100">{unitLabel}</h2>
+      <button
+        onClick={onShuffle}
+        className="ml-auto flex items-center gap-1 bg-indigo-700 hover:bg-indigo-800 text-white font-semibold py-1 px-3 rounded-sm transition duration-200 shadow-md text-sm"
+      >
+        <IconRefresh size={16} stroke={2} /> シャッフル
+      </button>
+    </div>
+    <div className="bg-gray-800 rounded-sm shadow-2xl p-8 cursor-pointer hover:shadow-3xl transition duration-200 min-h-100 flex flex-col justify-center items-center select-none relative overflow-hidden">
+      <div
+        className="absolute top-0 left-0 h-full flex items-center justify-start bg-linear-to-r from-indigo-900/20 to-transparent"
+        style={{ width: '20%', zIndex: 10 }}
+        onClick={e => {
+          e.stopPropagation();
+          onPrev();
+        }}
+      >
+        <div className="h-full flex items-center pl-4 text-indigo-300 opacity-80">
+          <IconArrowLeft size={32} stroke={2.5} />
+        </div>
+      </div>
+      <div
+        className="absolute top-0 right-0 h-full flex items-center justify-end bg-linear-to-l from-pink-900/15 to-transparent"
+        style={{ width: '80%', zIndex: 10 }}
+        onClick={e => {
+          e.stopPropagation();
+          onClick();
+        }}
+      >
+        <div className="h-full flex items-center pr-4 text-pink-300 opacity-80">
+          <IconArrowRight size={32} stroke={2.5} />
+        </div>
+      </div>
+      <div className="w-full h-full flex flex-col justify-center items-center pointer-events-none">
+        {!reverseMode ? (
+          <>
+            <p className="text-3xl mb-8 text-gray-100 font-medium tracking-wide flex flex-col items-center">
+              {phrase.JA}
+            </p>
+            {showEnglish && (
+              <div className="mt-8 pt-8 border-t-2 border-indigo-700 flex flex-col items-center">
+                <div className="flex items-center gap-2">
+                  <p className="text-2xl text-indigo-300 font-semibold">
+                    {phrase.EN}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={e => { e.stopPropagation(); onSpeak(phrase.EN); }}
+                    className="ml-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-sm px-3 py-1 shadow-md text-base pointer-events-auto"
+                    aria-label="英文を再生"
+                  >
+                    <IconVolume size={20} stroke={2} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-2 mb-8 justify-center">
+              <p className="text-3xl text-indigo-300 font-semibold tracking-wide">
+                {phrase.EN}
+              </p>
+              <button
+                type="button"
+                onClick={e => { e.stopPropagation(); onSpeak(phrase.EN); }}
+                className="ml-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-sm px-3 py-1 shadow-md text-base pointer-events-auto"
+                aria-label="英文を再生"
+              >
+                <IconVolume size={20} stroke={2} />
+              </button>
+            </div>
+            {showEnglish && (
+              <div className="mt-8 pt-8 border-t-2 border-pink-700">
+                <p className="text-2xl text-gray-100 font-medium">
+                  {phrase.JA}
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+      <div className="mt-12 text-gray-400 text-sm">
+        {!showEnglish ? (reverseMode ? 'クリックして日本語訳を表示' : 'クリックして英訳を表示') : 
+         index < total - 1 ? 'クリックして次へ' : 'クリックして終了'}
+      </div>
+    </div>
+  </div>
+);
+
+export default PhraseCard;
