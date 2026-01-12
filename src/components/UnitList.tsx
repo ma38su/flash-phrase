@@ -1,8 +1,9 @@
 import React from 'react';
 import { IconVolume, IconArrowLeft, IconArrowRight } from '@tabler/icons-react';
+import type { Phrase } from '../types';
 
 interface Props {
-  phrases: { No: string; EN: string; JA: string }[];
+  phrases: Phrase[];
   showEN: boolean;
   showJA: boolean;
   onToggleEN: () => void;

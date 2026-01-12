@@ -1,46 +1,23 @@
 import { useState, useEffect } from 'react'
-import Papa from 'papaparse'
 import './App.css'
 import UnitSelect from './components/UnitSelect'
 import PhraseCard from './components/PhraseCard'
 import UnitList from './components/UnitList'
 import UnitListHeader from './components/UnitListHeader'
-
-interface Phrase {
-  Unit: number
-  No: string
-  EN: string
-  JA: string
-}
-
-interface UnitFile {
-  unitNumber: number
-  filepath: string
-}
-
-// 利用可能なユニットファイルのリスト
-const UNIT_FILES: UnitFile[] = [
-  { unitNumber: 1, filepath: '/flash-phrase/unit1.csv' },
-  { unitNumber: 2, filepath: '/flash-phrase/unit2.csv' },
-  { unitNumber: 3, filepath: '/flash-phrase/unit3.csv' },
-  { unitNumber: 4, filepath: '/flash-phrase/unit4.csv' },
-  { unitNumber: 5, filepath: '/flash-phrase/unit5.csv' },
-  { unitNumber: 6, filepath: '/flash-phrase/unit6.csv' },
-  { unitNumber: 7, filepath: '/flash-phrase/unit7.csv' },
-  { unitNumber: 8, filepath: '/flash-phrase/unit8.csv' },
-  { unitNumber: 9, filepath: '/flash-phrase/unit9.csv' },
-  { unitNumber: 10, filepath: '/flash-phrase/unit10.csv' },
-]
+import type { Phrase, SelectedUnit } from './types'
+import { useCSVLoader } from './hooks/useCSVLoader'
+import { useSpeech } from './hooks/useSpeech'
+import { shufflePhrases, filterPhrasesByUnit, getUnitLabel } from './utils/phraseUtils'
 
 function App() {
-  const [phrases, setPhrases] = useState<Phrase[]>([])
-  const [units, setUnits] = useState<number[]>([])
-  const [selectedUnit, setSelectedUnit] = useState<number | null | 'all'>(null)
+  const { phrases, units, loading } = useCSVLoader();
+  const { speakEnglish } = useSpeech();
+  
+  const [selectedUnit, setSelectedUnit] = useState<SelectedUnit>(null)
   const [currentPhrases, setCurrentPhrases] = useState<Phrase[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showEnglish, setShowEnglish] = useState(false)
   const [isRandom, setIsRandom] = useState(false)
-  const [loading, setLoading] = useState(true)
 
   // ユニット一覧表示用の状態
   const [showUnitList, setShowUnitList] = useState<number | null>(null);
@@ -109,12 +86,10 @@ function App() {
         const showEnglish = searchParams.get('show') === 'true';
         
         // currentPhrasesを設定
-        const unitPhrases = unit === 'all' 
-          ? phrases 
-          : phrases.filter(p => p.Unit === unit);
+        const unitPhrases = filterPhrasesByUnit(phrases, unit);
         const randomParam = searchParams.get('random');
         const orderedPhrases = randomParam === 'true'
-          ? [...unitPhrases].sort(() => Math.random() - 0.5)
+          ? shufflePhrases(unitPhrases)
           : unitPhrases;
         
         setCurrentPhrases(orderedPhrases);
@@ -140,49 +115,6 @@ function App() {
     
     window.location.hash = hash;
   };
-
-  // 複数のCSVファイルを読み込み
-  useEffect(() => {
-    const loadAllUnits = async () => {
-      const allPhrases: Phrase[] = []
-      
-      for (const unitFile of UNIT_FILES) {
-        try {
-          const response = await fetch(unitFile.filepath)
-          const csvText = await response.text()
-          
-          await new Promise<void>((resolve) => {
-            Papa.parse<{ No: string; EN: string; JA: string }>(csvText, {
-              header: true,
-              complete: (results) => {
-                const unitPhrases = results.data
-                  .filter(row => row.EN && row.JA)
-                  .map(row => ({
-                    Unit: unitFile.unitNumber,
-                    No: row.No,
-                    EN: row.EN,
-                    JA: row.JA
-                  }))
-                allPhrases.push(...unitPhrases)
-                resolve()
-              }
-            })
-          })
-        } catch (error) {
-          console.error(`Failed to load ${unitFile.filepath}:`, error)
-        }
-      }
-      
-      setPhrases(allPhrases)
-      
-      // ユニット一覧を抽出（数値としてソート）
-      const uniqueUnits = Array.from(new Set(allPhrases.map(p => p.Unit))).sort((a, b) => a - b)
-      setUnits(uniqueUnits)
-      setLoading(false)
-    }
-    
-    loadAllUnits()
-  }, [])
 
   // phrasesが読み込まれた後にURL状態を復元
   useEffect(() => {
@@ -243,18 +175,18 @@ function App() {
   }, [showUnitList, showListEN, showListJA, loading]);
 
   // ユニット選択時
-  const handleSelectUnit = (unit: number | 'all') => {
-    const unitPhrases = unit === 'all' 
-      ? phrases 
-      : phrases.filter(p => p.Unit === unit)
+  const handleSelectUnit = (unit: SelectedUnit) => {
+    if (unit === null) return;
+    
+    const unitPhrases = filterPhrasesByUnit(phrases, unit);
     const orderedPhrases = isRandom 
-      ? [...unitPhrases].sort(() => Math.random() - 0.5)
-      : unitPhrases
-    setCurrentPhrases(orderedPhrases)
-    setSelectedUnit(unit)
-    setCurrentIndex(0)
-    setShowEnglish(false)
-    setShowUnitList(null)
+      ? shufflePhrases(unitPhrases)
+      : unitPhrases;
+    setCurrentPhrases(orderedPhrases);
+    setSelectedUnit(unit);
+    setCurrentIndex(0);
+    setShowEnglish(false);
+    setShowUnitList(null);
   }
 
   // ユニット一覧表示への切り替え
@@ -263,15 +195,6 @@ function App() {
     setSelectedUnit(null);
   };
 
-  // 全フレーズをランダムに選択
-  const handleSelectAllRandom = () => {
-    const shuffledPhrases = [...phrases].sort(() => Math.random() - 0.5)
-    setCurrentPhrases(shuffledPhrases)
-    setSelectedUnit('all')
-    setCurrentIndex(0)
-    setShowEnglish(false)
-  }
-
   // ランダムモード切り替え
   const toggleRandomMode = () => {
     const newRandomMode = !isRandom
@@ -279,15 +202,13 @@ function App() {
     
     // すでにユニット選択済みの場合は再シャッフル
     if (selectedUnit) {
-      const unitPhrases = selectedUnit === 'all'
-        ? phrases
-        : phrases.filter(p => p.Unit === selectedUnit)
+      const unitPhrases = filterPhrasesByUnit(phrases, selectedUnit);
       const orderedPhrases = newRandomMode
-        ? [...unitPhrases].sort(() => Math.random() - 0.5)
-        : unitPhrases
-      setCurrentPhrases(orderedPhrases)
-      setCurrentIndex(0)
-      setShowEnglish(false)
+        ? shufflePhrases(unitPhrases)
+        : unitPhrases;
+      setCurrentPhrases(orderedPhrases);
+      setCurrentIndex(0);
+      setShowEnglish(false);
     }
   }
 
@@ -310,20 +231,6 @@ function App() {
     }
   }
 
-  // 英文音声再生（en-USの自然な声を優先）
-  const speakEnglish = (text: string) => {
-    if ('speechSynthesis' in window) {
-      const synth = window.speechSynthesis;
-      const voices = synth.getVoices();
-      // Google, Microsoft, Appleなどのen-US自然音声を優先
-      const preferred = voices.find(v => v.lang === 'en-US' && /Google|Microsoft|Apple|Samantha|Daniel|Karen|Moira|Fiona/i.test(v.name));
-      const fallback = voices.find(v => v.lang === 'en-US');
-      const utter = new window.SpeechSynthesisUtterance(text);
-      utter.lang = 'en-US';
-      utter.voice = preferred || fallback || voices[0];
-      synth.speak(utter);
-    }
-  }
 
   // ユニット選択前画面
   if (!selectedUnit && showUnitList === null) {
@@ -370,22 +277,25 @@ function App() {
   // ユニット一覧画面
   if (showUnitList !== null) {
     const unitPhrases = phrases.filter(p => p.Unit === showUnitList);
+    const currentUnitIndex = units.indexOf(showUnitList);
+    
+    const handleUnitNavigation = (direction: 'prev' | 'next') => {
+      const newIndex = direction === 'prev' 
+        ? Math.max(0, currentUnitIndex - 1)
+        : Math.min(units.length - 1, currentUnitIndex + 1);
+      setShowUnitList(units[newIndex]);
+    };
+    
     return (
       <div className="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-700 p-4 sm:p-8">
         <div className="max-w-2xl mx-auto">
           <UnitListHeader
             unit={showUnitList}
             onBack={() => setShowUnitList(null)}
-            onPrev={() => {
-              const idx = units.indexOf(showUnitList);
-              if (idx > 0) setShowUnitList(units[idx - 1]);
-            }}
-            onNext={() => {
-              const idx = units.indexOf(showUnitList);
-              if (idx < units.length - 1) setShowUnitList(units[idx + 1]);
-            }}
-            disablePrev={units.indexOf(showUnitList) <= 0}
-            disableNext={units.indexOf(showUnitList) >= units.length - 1}
+            onPrev={() => handleUnitNavigation('prev')}
+            onNext={() => handleUnitNavigation('next')}
+            disablePrev={currentUnitIndex <= 0}
+            disableNext={currentUnitIndex >= units.length - 1}
           />
           <UnitList
             phrases={unitPhrases}
@@ -396,16 +306,10 @@ function App() {
             onSpeak={speakEnglish}
             unit={showUnitList}
             units={units}
-            onPrev={() => {
-              const idx = units.indexOf(showUnitList);
-              if (idx > 0) setShowUnitList(units[idx - 1]);
-            }}
-            onNext={() => {
-              const idx = units.indexOf(showUnitList);
-              if (idx < units.length - 1) setShowUnitList(units[idx + 1]);
-            }}
-            disablePrev={units.indexOf(showUnitList) <= 0}
-            disableNext={units.indexOf(showUnitList) >= units.length - 1}
+            onPrev={() => handleUnitNavigation('prev')}
+            onNext={() => handleUnitNavigation('next')}
+            disablePrev={currentUnitIndex <= 0}
+            disableNext={currentUnitIndex >= units.length - 1}
           />
         </div>
       </div>
@@ -432,12 +336,10 @@ function App() {
           }}
           total={currentPhrases.length}
           index={currentIndex}
-          unitLabel={selectedUnit === 'all' ? '全ユニット' : `Unit ${selectedUnit}`}
+          unitLabel={getUnitLabel(selectedUnit)}
           onBack={() => setSelectedUnit(null)}
           onShuffle={() => {
-            if (selectedUnit === 'all') {
-              handleSelectAllRandom();
-            } else if (selectedUnit !== null) {
+            if (selectedUnit !== null) {
               handleSelectUnit(selectedUnit);
             }
           }}

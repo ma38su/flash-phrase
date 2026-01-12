@@ -1,11 +1,6 @@
 import React from 'react';
 import { IconArrowLeft, IconArrowRight, IconVolume, IconRefresh, IconHome } from '@tabler/icons-react';
-
-interface Phrase {
-  EN: string;
-  JA: string;
-  Unit: number;
-}
+import type { Phrase } from '../types';
 
 interface Props {
   phrase: Phrase;
