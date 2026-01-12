@@ -213,7 +213,20 @@ function App() {
             onClick={() => setSelectedUnit(null)}
             className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
           >
-            ← ユニット選択に戻る
+            ユニット選択に戻る
+          </button>
+          <button
+            onClick={() => {
+              if (currentIndex > 0) {
+                setCurrentIndex(currentIndex - 1);
+                setShowEnglish(false);
+              }
+            }}
+            disabled={currentIndex === 0}
+            className={`bg-indigo-300 hover:bg-indigo-500 text-white font-semibold py-2 px-6 rounded-lg transition duration-200 shadow-md mr-4 ${currentIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            style={{marginLeft: '8px'}}
+          >
+            戻る
           </button>
           <div className="flex items-center gap-4">
             <button
@@ -241,7 +254,6 @@ function App() {
             <p className="text-3xl mb-8 text-gray-800 font-medium">
               {currentPhrase.JA}
             </p>
-            
             {showEnglish && (
               <div className="mt-8 pt-8 border-t-2 border-indigo-200">
                 <p className="text-2xl text-indigo-600 font-semibold">
@@ -250,7 +262,6 @@ function App() {
               </div>
             )}
           </div>
-
           <div className="mt-12 text-gray-500 text-sm">
             {!showEnglish ? 'クリックして英訳を表示' : 
              currentIndex < currentPhrases.length - 1 ? 'クリックして次へ' : 'クリックして終了'}
