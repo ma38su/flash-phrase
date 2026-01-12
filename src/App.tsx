@@ -52,6 +52,86 @@ function App() {
   const [showListEN, setShowListEN] = useState(true);
   const [showListJA, setShowListJA] = useState(true);
 
+  // URLから状態を復元する関数
+  const restoreStateFromURL = () => {
+    const path = window.location.pathname.replace('/flash-phrase', '').replace(/^\/$/, '');
+    const searchParams = new URLSearchParams(window.location.search);
+    
+    if (!path) {
+      // ルートパスはユニット選択画面
+      return;
+    }
+
+    const pathParts = path.split('/').filter(Boolean);
+    
+    if (pathParts.length >= 2) {
+      const unitOrAll = pathParts[0];
+      const mode = pathParts[1];
+      
+      // ランダムモードの復元
+      const randomParam = searchParams.get('random');
+      if (randomParam === 'true') {
+        setIsRandom(true);
+      }
+      
+      if (mode === 'list' && unitOrAll !== 'all') {
+        // ユニット一覧表示
+        const unitNum = parseInt(unitOrAll.replace('unit', ''));
+        if (!isNaN(unitNum)) {
+          setShowUnitList(unitNum);
+          // 一覧表示の表示設定を復元
+          const showEN = searchParams.get('showEN');
+          const showJA = searchParams.get('showJA');
+          if (showEN !== null) setShowListEN(showEN === 'true');
+          if (showJA !== null) setShowListJA(showJA === 'true');
+        }
+      } else if (mode === 'ja-en' || mode === 'en-ja') {
+        // フレーズ表示モード
+        const isReverse = mode === 'en-ja';
+        setReverseMode(isReverse);
+        
+        let unit: number | 'all';
+        if (unitOrAll === 'all') {
+          unit = 'all';
+        } else {
+          unit = parseInt(unitOrAll.replace('unit', ''));
+          if (isNaN(unit)) return;
+        }
+        
+        // フレーズの状態を復元
+        const index = parseInt(searchParams.get('index') || '0');
+        const showEnglish = searchParams.get('show') === 'true';
+        
+        // currentPhrasesを設定
+        const unitPhrases = unit === 'all' 
+          ? phrases 
+          : phrases.filter(p => p.Unit === unit);
+        const randomParam = searchParams.get('random');
+        const orderedPhrases = randomParam === 'true'
+          ? [...unitPhrases].sort(() => Math.random() - 0.5)
+          : unitPhrases;
+        
+        setCurrentPhrases(orderedPhrases);
+        setSelectedUnit(unit);
+        setCurrentIndex(Math.min(index, orderedPhrases.length - 1));
+        setShowEnglish(showEnglish);
+      }
+    }
+  };
+
+  // URLを更新する関数
+  const updateURL = (path: string, params: Record<string, string> = {}) => {
+    const url = new URL(window.location.href);
+    url.pathname = '/flash-phrase' + path;
+    url.search = '';
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) url.searchParams.set(key, value);
+    });
+    
+    window.history.pushState({}, '', url.toString());
+  };
+
   // 複数のCSVファイルを読み込み
   useEffect(() => {
     const loadAllUnits = async () => {
@@ -89,11 +169,64 @@ function App() {
       // ユニット一覧を抽出（数値としてソート）
       const uniqueUnits = Array.from(new Set(allPhrases.map(p => p.Unit))).sort((a, b) => a - b)
       setUnits(uniqueUnits)
+      setPhrases(allPhrases)
       setLoading(false)
+      
+      // URLから状態を復元
+      setTimeout(() => restoreStateFromURL(), 0)
     }
     
     loadAllUnits()
   }, [])
+
+  // ブラウザの戻る/進むボタンに対応
+  useEffect(() => {
+    const handlePopState = () => {
+      restoreStateFromURL();
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // selectedUnit変更時にURLを更新
+  useEffect(() => {
+    if (loading) return;
+    
+    if (selectedUnit === null && showUnitList === null) {
+      updateURL('/');
+    }
+  }, [selectedUnit, showUnitList, loading]);
+
+  // フレーズ表示状態変更時にURLを更新
+  useEffect(() => {
+    if (loading || selectedUnit === null || showUnitList !== null) return;
+    
+    const unitPath = selectedUnit === 'all' ? '/all' : `/unit${selectedUnit}`;
+    const mode = reverseMode ? '/en-ja' : '/ja-en';
+    const params: Record<string, string> = {
+      index: currentIndex.toString(),
+      show: showEnglish.toString(),
+    };
+    
+    if (isRandom) {
+      params.random = 'true';
+    }
+    
+    updateURL(unitPath + mode, params);
+  }, [selectedUnit, reverseMode, currentIndex, showEnglish, isRandom, loading, showUnitList]);
+
+  // ユニット一覧表示状態変更時にURLを更新
+  useEffect(() => {
+    if (loading || showUnitList === null) return;
+    
+    const params: Record<string, string> = {
+      showEN: showListEN.toString(),
+      showJA: showListJA.toString(),
+    };
+    
+    updateURL(`/unit${showUnitList}/list`, params);
+  }, [showUnitList, showListEN, showListJA, loading]);
 
   // ユニット選択時
   const handleSelectUnit = (unit: number | 'all') => {
@@ -107,7 +240,14 @@ function App() {
     setSelectedUnit(unit)
     setCurrentIndex(0)
     setShowEnglish(false)
+    setShowUnitList(null)
   }
+
+  // ユニット一覧表示への切り替え
+  const handleShowUnitList = (unit: number) => {
+    setShowUnitList(unit);
+    setSelectedUnit(null);
+  };
 
   // 全フレーズをランダムに選択
   const handleSelectAllRandom = () => {
@@ -203,7 +343,7 @@ function App() {
                   units={units}
                   onSelectUnit={(unit: number) => { setReverseMode(false); handleSelectUnit(unit); }}
                   onSelectReverseUnit={(unit: number) => { setReverseMode(true); handleSelectUnit(unit); }}
-                  onShowUnitList={setShowUnitList}
+                  onShowUnitList={handleShowUnitList}
                 />
               </>
             )}
