@@ -148,30 +148,45 @@ function App() {
     }
   }
 
+  // 英文音声再生（en-USの自然な声を優先）
+  const speakEnglish = (text: string) => {
+    if ('speechSynthesis' in window) {
+      const synth = window.speechSynthesis;
+      const voices = synth.getVoices();
+      // Google, Microsoft, Appleなどのen-US自然音声を優先
+      const preferred = voices.find(v => v.lang === 'en-US' && /Google|Microsoft|Apple|Samantha|Daniel|Karen|Moira|Fiona/i.test(v.name));
+      const fallback = voices.find(v => v.lang === 'en-US');
+      const utter = new window.SpeechSynthesisUtterance(text);
+      utter.lang = 'en-US';
+      utter.voice = preferred || fallback || voices[0];
+      synth.speak(utter);
+    }
+  }
+
   // ユニット選択前画面
   if (!selectedUnit && showUnitList === null) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 p-4 sm:p-8">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700 p-4 sm:p-8">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-4xl font-bold text-center mb-8 text-indigo-900">Quick Response</h1>
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+          <h1 className="text-4xl font-extrabold text-center mb-8 text-gray-100 tracking-wide drop-shadow-lg">Quick Response</h1>
+          <div className="bg-gray-800 rounded-sm shadow-2xl p-4 sm:p-8">
             {loading ? (
               <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto"></div>
-                <p className="mt-4 text-gray-600">読み込み中...</p>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-400 mx-auto"></div>
+                <p className="mt-4 text-gray-400">読み込み中...</p>
               </div>
             ) : (
               <>
-                <h2 className="text-2xl font-semibold mb-4 text-gray-800">ユニットを選択してください</h2>
+                <h2 className="text-2xl font-bold mb-6 text-gray-200">ユニットを選択してください</h2>
                 <div className="mb-6 flex items-center justify-center">
                   <label className="flex items-center cursor-pointer">
                     <input
                       type="checkbox"
                       checked={isRandom}
                       onChange={toggleRandomMode}
-                      className="w-5 h-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+                      className="w-5 h-5 text-indigo-400 bg-gray-700 border-gray-600 rounded focus:ring-2 focus:ring-indigo-500"
                     />
-                    <span className="ml-3 text-lg text-gray-700 font-medium">
+                    <span className="ml-3 text-lg text-gray-300 font-medium">
                       🔀 ランダム表示
                     </span>
                   </label>
@@ -179,31 +194,31 @@ function App() {
                 <div className="mb-6">
                   <button
                     onClick={handleSelectAllRandom}
-                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 px-6 rounded-lg transition duration-200 transform hover:scale-105 shadow-lg"
+                    className="w-full bg-gradient-to-r from-indigo-700 to-pink-700 hover:from-indigo-800 hover:to-pink-800 text-white font-bold py-4 px-6 rounded-xl transition duration-200 transform hover:scale-105 shadow-lg text-lg tracking-wide"
                   >
                     🎲 全ユニットをランダムに学習
                   </button>
                 </div>
-                <div className="divide-y divide-indigo-100">
+                <div className="divide-y divide-gray-700">
                   {units.map(unit => (
                     <div key={unit} className="flex flex-col sm:flex-row items-center py-4 gap-2 sm:gap-4">
-                      <span className="text-indigo-700 font-bold min-w-[4em] text-lg">Unit {unit}</span>
+                      <span className="text-indigo-300 font-bold min-w-[4em] text-lg">Unit {unit}</span>
                       <div className="flex flex-row gap-2 w-full justify-center">
                         <button
                           onClick={() => { setReverseMode(false); handleSelectUnit(unit); }}
-                          className="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
+                          className="bg-indigo-700 hover:bg-indigo-800 text-white font-semibold py-2 px-4 rounded-sm transition duration-200 shadow-md text-base"
                         >
                           日→英
                         </button>
                         <button
                           onClick={() => { setReverseMode(true); handleSelectUnit(unit); }}
-                          className="bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
+                          className="bg-pink-700 hover:bg-pink-800 text-white font-semibold py-2 px-4 rounded-sm transition duration-200 shadow-md text-base"
                         >
                           英→日
                         </button>
                         <button
                           onClick={() => setShowUnitList(unit)}
-                          className="bg-gray-200 hover:bg-gray-300 text-indigo-700 font-semibold py-2 px-4 rounded-lg transition duration-200"
+                          className="bg-gray-700 hover:bg-gray-600 text-indigo-200 font-semibold py-2 px-4 rounded-sm transition duration-200 shadow-md text-base"
                         >
                           一覧
                         </button>
@@ -223,25 +238,25 @@ function App() {
   if (showUnitList !== null) {
     const unitPhrases = phrases.filter(p => p.Unit === showUnitList);
     return (
-      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 p-4 sm:p-8">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700 p-4 sm:p-8">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center mb-6">
             <button
               onClick={() => setShowUnitList(null)}
-              className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 mr-2"
+              className="bg-gray-700 hover:bg-gray-600 text-gray-100 font-semibold py-2 px-4 rounded-sm transition duration-200 mr-2 shadow-md"
             >
               ← ユニット選択に戻る
             </button>
-            <h2 className="text-2xl font-bold text-indigo-900">Unit {showUnitList} 一覧</h2>
+            <h2 className="text-2xl font-bold text-gray-100">Unit {showUnitList} 一覧</h2>
           </div>
-          <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-            <ul className="divide-y divide-indigo-100">
+          <div className="bg-gray-800 rounded-sm shadow-2xl p-4 sm:p-8">
+            <ul className="divide-y divide-gray-700">
               {unitPhrases.map((phrase, idx) => (
                 <li key={idx} className="py-4 flex items-start gap-4">
-                  <span className="text-indigo-700 font-bold min-w-[2.5em] text-center pt-1">{phrase.No}.</span>
+                  <span className="text-indigo-300 font-bold min-w-[2.5em] text-center pt-1">{phrase.No}.</span>
                   <div className="flex flex-col flex-1">
-                    <span className="text-indigo-500 text-base sm:text-lg break-words mb-1">{phrase.EN}</span>
-                    <span className="text-gray-800 text-base sm:text-lg break-words">{phrase.JA}</span>
+                    <span className="text-indigo-300 text-base sm:text-lg break-words mb-1 font-semibold">{phrase.EN}</span>
+                    <span className="text-gray-100 text-base sm:text-lg break-words">{phrase.JA}</span>
                   </div>
                 </li>
               ))}
@@ -256,12 +271,12 @@ function App() {
   const currentPhrase = currentPhrases[currentIndex]
   
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700 p-4 sm:p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <button
             onClick={() => setSelectedUnit(null)}
-            className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
+            className="bg-gray-700 hover:bg-gray-600 text-gray-100 font-semibold py-2 px-4 rounded-sm transition duration-200 shadow-md"
           >
             ← ユニット選択に戻る
           </button>
@@ -273,7 +288,7 @@ function App() {
               }
             }}
             disabled={currentIndex === 0}
-            className={`bg-indigo-300 hover:bg-indigo-500 text-white font-semibold py-2 px-6 rounded-lg transition duration-200 shadow-md mr-4 ${currentIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`bg-indigo-900 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-sm transition duration-200 shadow-md mr-4 ${currentIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
             style={{marginLeft: '8px'}}
           >
             ← 戻る
@@ -282,13 +297,13 @@ function App() {
             <button
               onClick={toggleRandomMode}
               className={`${
-                isRandom ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400 hover:bg-gray-500'
-              } text-white font-semibold py-2 px-4 rounded-lg transition duration-200`}
+                isRandom ? 'bg-green-700 hover:bg-green-800' : 'bg-gray-600 hover:bg-gray-700'
+              } text-white font-semibold py-2 px-4 rounded-sm transition duration-200 shadow-md`}
               title="ランダムモード切り替え"
             >
               🔀 {isRandom ? 'ON' : 'OFF'}
             </button>
-            <h1 className="text-2xl font-bold text-indigo-900">
+            <h1 className="text-2xl font-bold text-gray-100">
               {selectedUnit === 'all' 
                 ? `全ユニット (Unit ${currentPhrase.Unit})` 
                 : `Unit ${selectedUnit}`} - {currentIndex + 1} / {currentPhrases.length}
@@ -298,31 +313,51 @@ function App() {
 
         <div 
           onClick={handleClick}
-          className="bg-white rounded-lg shadow-xl p-12 cursor-pointer hover:shadow-2xl transition duration-200 min-h-[400px] flex flex-col justify-center items-center"
+          className="bg-gray-800 rounded-sm shadow-2xl p-8 cursor-pointer hover:shadow-3xl transition duration-200 min-h-[400px] flex flex-col justify-center items-center"
         >
           <div className="text-center">
             {/* reverseModeによる表示切り替え */}
             {!reverseMode ? (
               <>
-                <p className="text-3xl mb-8 text-gray-800 font-medium">
+                <p className="text-3xl mb-8 text-gray-100 font-medium tracking-wide flex flex-col items-center">
                   {currentPhrase.JA}
                 </p>
                 {showEnglish && (
-                  <div className="mt-8 pt-8 border-t-2 border-indigo-200">
-                    <p className="text-2xl text-indigo-600 font-semibold">
-                      {currentPhrase.EN}
-                    </p>
+                  <div className="mt-8 pt-8 border-t-2 border-indigo-700 flex flex-col items-center">
+                    <div className="flex items-center gap-2">
+                      <p className="text-2xl text-indigo-300 font-semibold">
+                        {currentPhrase.EN}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={e => { e.stopPropagation(); speakEnglish(currentPhrase.EN); }}
+                        className="ml-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-sm px-3 py-1 shadow-md text-base"
+                        aria-label="英文を再生"
+                      >
+                        🔊
+                      </button>
+                    </div>
                   </div>
                 )}
               </>
             ) : (
               <>
-                <p className="text-3xl mb-8 text-indigo-600 font-semibold">
-                  {currentPhrase.EN}
-                </p>
+                <div className="flex items-center gap-2 mb-8 justify-center">
+                  <p className="text-3xl text-indigo-300 font-semibold tracking-wide">
+                    {currentPhrase.EN}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={e => { e.stopPropagation(); speakEnglish(currentPhrase.EN); }}
+                    className="ml-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-sm px-3 py-1 shadow-md text-base"
+                    aria-label="英文を再生"
+                  >
+                    🔊
+                  </button>
+                </div>
                 {showEnglish && (
-                  <div className="mt-8 pt-8 border-t-2 border-pink-200">
-                    <p className="text-2xl text-gray-800 font-medium">
+                  <div className="mt-8 pt-8 border-t-2 border-pink-700">
+                    <p className="text-2xl text-gray-100 font-medium">
                       {currentPhrase.JA}
                     </p>
                   </div>
@@ -330,7 +365,7 @@ function App() {
               </>
             )}
           </div>
-          <div className="mt-12 text-gray-500 text-sm">
+          <div className="mt-12 text-gray-400 text-sm">
             {!showEnglish ? (reverseMode ? 'クリックして日本語訳を表示' : 'クリックして英訳を表示') : 
              currentIndex < currentPhrases.length - 1 ? 'クリックして次へ' : 'クリックして終了'}
           </div>
