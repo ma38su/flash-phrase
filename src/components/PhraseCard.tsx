@@ -72,7 +72,8 @@ const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick
               {phrase.JA}
             </p>
             {showEnglish && (
-              <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t-2 border-indigo-700 flex flex-col items-center">
+              <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 flex flex-col items-center">
+                <div className="w-32 sm:w-48 border-t-2 border-indigo-700 mb-4 sm:mb-6"></div>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <p className="text-xl sm:text-2xl text-indigo-300 font-semibold text-center">
                     {phrase.EN}
@@ -105,7 +106,8 @@ const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick
               </button>
             </div>
             {showEnglish && (
-              <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t-2 border-pink-700">
+              <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 flex flex-col items-center">
+                <div className="w-32 sm:w-48 border-t-2 border-pink-700 mb-4 sm:mb-6"></div>
                 <p className="text-xl sm:text-2xl text-gray-100 font-medium text-center">
                   {phrase.JA}
                 </p>
