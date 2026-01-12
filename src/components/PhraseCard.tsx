@@ -55,9 +55,13 @@ const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick
       </div>
       <div
         className="absolute top-0 right-0 h-full flex items-center justify-end bg-linear-to-l from-pink-900/15 to-transparent"
-        style={{ width: '80%', zIndex: 10 }}
+        style={{ width: '80%', zIndex: 5 }}
         onClick={e => {
           e.stopPropagation();
+          // 音声ボタンがクリックされた場合は進まない
+          if ((e.target as Element).closest('button[aria-label="英文を再生"]')) {
+            return;
+          }
           onClick();
         }}
       >
@@ -80,8 +84,12 @@ const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick
                   </p>
                   <button
                     type="button"
-                    onClick={e => { e.stopPropagation(); onSpeak(phrase.EN); }}
-                    className="self-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-sm px-2 sm:px-3 py-1 shadow-md text-sm sm:text-base pointer-events-auto"
+                    onClick={e => { 
+                      e.stopPropagation(); 
+                      e.preventDefault();
+                      onSpeak(phrase.EN); 
+                    }}
+                    className="self-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-sm px-2 sm:px-3 py-1 shadow-md text-sm sm:text-base pointer-events-auto relative z-20"
                     aria-label="英文を再生"
                   >
                     <IconVolume size={18} stroke={2} />
@@ -98,8 +106,12 @@ const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick
               </p>
               <button
                 type="button"
-                onClick={e => { e.stopPropagation(); onSpeak(phrase.EN); }}
-                className="self-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-sm px-2 sm:px-3 py-1 shadow-md text-sm sm:text-base pointer-events-auto"
+                onClick={e => { 
+                  e.stopPropagation(); 
+                  e.preventDefault();
+                  onSpeak(phrase.EN); 
+                }}
+                className="self-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-sm px-2 sm:px-3 py-1 shadow-md text-sm sm:text-base pointer-events-auto relative z-20"
                 aria-label="英文を再生"
               >
                 <IconVolume size={18} stroke={2} />
