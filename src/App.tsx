@@ -176,25 +176,25 @@ function App() {
     return (
       <div className="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-700 p-4 sm:p-8">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-4xl font-extrabold text-center mb-8 text-gray-100 tracking-wide drop-shadow-lg">Quick Response</h1>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-center mb-6 sm:mb-8 text-gray-100 tracking-wide drop-shadow-lg">Quick Response</h1>
           <div className="bg-gray-800 rounded-sm shadow-2xl p-4 sm:p-8">
             {loading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-400 mx-auto"></div>
-                <p className="mt-4 text-gray-400">読み込み中...</p>
+              <div className="text-center py-8 sm:py-12">
+                <div className="animate-spin rounded-full h-10 sm:h-12 w-10 sm:w-12 border-b-2 border-gray-400 mx-auto"></div>
+                <p className="mt-3 sm:mt-4 text-gray-400 text-sm sm:text-base">読み込み中...</p>
               </div>
             ) : (
               <>
-                <h2 className="text-2xl font-bold mb-6 text-gray-200">ユニットを選択してください</h2>
-                <div className="mb-6 flex items-center justify-center">
+                <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-200 text-center">ユニットを選択してください</h2>
+                <div className="mb-4 sm:mb-6 flex items-center justify-center">
                   <label className="flex items-center cursor-pointer">
                     <input
                       type="checkbox"
                       checked={isRandom}
                       onChange={toggleRandomMode}
-                      className="w-5 h-5 text-indigo-400 bg-gray-700 border-gray-600 rounded focus:ring-2 focus:ring-indigo-500"
+                      className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400 bg-gray-700 border-gray-600 rounded focus:ring-2 focus:ring-indigo-500"
                     />
-                    <span className="ml-3 text-lg text-gray-300 font-medium">
+                    <span className="ml-2 sm:ml-3 text-base sm:text-lg text-gray-300 font-medium">
                       🔀 ランダム表示
                     </span>
                   </label>

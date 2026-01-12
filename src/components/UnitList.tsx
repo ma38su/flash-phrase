@@ -31,26 +31,26 @@ const UnitList: React.FC<Props> = ({ phrases, showEN, showJA, onToggleEN, onTogg
     <div className="bg-gray-800 rounded-sm shadow-2xl p-4 sm:p-8">
       <ul className="divide-y divide-gray-700">
         {phrases.map((phrase, idx) => (
-          <li key={idx} className="py-4 flex items-start gap-4">
-            <span className="text-indigo-300 font-bold min-w-[2.5em] text-center pt-1">{phrase.No}.</span>
+          <li key={idx} className="py-3 sm:py-4 flex items-start gap-3 sm:gap-4">
+            <span className="text-indigo-300 font-bold min-w-[2em] sm:min-w-[2.5em] text-center pt-1 text-sm sm:text-base">{phrase.No}.</span>
             <div className="flex flex-col flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                {showEN && (
-                  <>
-                    <span className="text-indigo-300 text-base sm:text-lg wrap-break-word font-semibold">{phrase.EN}</span>
+              {showEN && (
+                <div className="mb-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                    <span className="text-indigo-300 text-sm sm:text-base md:text-lg wrap-break-word font-semibold">{phrase.EN}</span>
                     <button
                       type="button"
                       onClick={e => { e.stopPropagation(); onSpeak(phrase.EN); }}
-                      className="ml-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-sm px-3 py-1 shadow-md text-base pointer-events-auto"
+                      className="self-start sm:ml-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-sm px-2 py-1 shadow-md text-xs sm:text-base pointer-events-auto"
                       aria-label="英文を再生"
                     >
-                      <IconVolume size={18} stroke={2} />
+                      <IconVolume size={16} stroke={2} />
                     </button>
-                  </>
-                )}
-              </div>
+                  </div>
+                </div>
+              )}
               {showJA && (
-                <span className="text-gray-100 text-base sm:text-lg wrap-break-word">{phrase.JA}</span>
+                <span className="text-gray-100 text-sm sm:text-base md:text-lg wrap-break-word">{phrase.JA}</span>
               )}
             </div>
           </li>
@@ -60,16 +60,18 @@ const UnitList: React.FC<Props> = ({ phrases, showEN, showJA, onToggleEN, onTogg
         <button
           disabled={disablePrev}
           onClick={onPrev}
-          className={`flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-100 font-semibold py-2 px-4 rounded-sm transition duration-200 shadow-md ${disablePrev ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`flex items-center gap-1 sm:gap-2 bg-gray-700 hover:bg-gray-600 text-gray-100 font-semibold py-2 px-3 sm:px-4 rounded-sm transition duration-200 shadow-md ${disablePrev ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          <IconArrowLeft size={20} stroke={2} /> 前のユニット
+          <IconArrowLeft size={20} stroke={2} />
+          <span className="hidden sm:inline">前のユニット</span>
         </button>
         <button
           disabled={disableNext}
           onClick={onNext}
-          className={`flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-100 font-semibold py-2 px-4 rounded-sm transition duration-200 shadow-md ${disableNext ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`flex items-center gap-1 sm:gap-2 bg-gray-700 hover:bg-gray-600 text-gray-100 font-semibold py-2 px-3 sm:px-4 rounded-sm transition duration-200 shadow-md ${disableNext ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          次のユニット <IconArrowRight size={20} stroke={2} />
+          <span className="hidden sm:inline">次のユニット</span>
+          <IconArrowRight size={20} stroke={2} />
         </button>
       </div>
     </div>
