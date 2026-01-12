@@ -59,11 +59,12 @@ function App() {
       return;
     }
     
-    const path = window.location.pathname.replace('/flash-phrase', '').replace(/^\/$/, '');
-    const searchParams = new URLSearchParams(window.location.search);
+    const hash = window.location.hash.substring(1); // #を除去
+    const [path, queryString] = hash.split('?');
+    const searchParams = new URLSearchParams(queryString || '');
     
-    if (!path) {
-      // ルートパスはユニット選択画面
+    if (!path || path === '/') {
+      // ルートハッシュはユニット選択画面
       return;
     }
 
@@ -126,15 +127,18 @@ function App() {
 
   // URLを更新する関数
   const updateURL = (path: string, params: Record<string, string> = {}) => {
-    const url = new URL(window.location.href);
-    url.pathname = '/flash-phrase' + path;
-    url.search = '';
+    let hash = '#' + path;
     
+    const queryParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
-      if (value) url.searchParams.set(key, value);
+      if (value) queryParams.set(key, value);
     });
     
-    window.history.pushState({}, '', url.toString());
+    if (queryParams.toString()) {
+      hash += '?' + queryParams.toString();
+    }
+    
+    window.location.hash = hash;
   };
 
   // 複数のCSVファイルを読み込み
@@ -187,16 +191,16 @@ function App() {
     }
   }, [phrases, loading]);
 
-  // ブラウザの戻る/進むボタンに対応
+  // ブラウザの戻る/進むボタンとハッシュ変更に対応
   useEffect(() => {
-    const handlePopState = () => {
+    const handleHashChange = () => {
       if (phrases.length > 0) {
         restoreStateFromURL();
       }
     };
     
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, [phrases]);
 
   // selectedUnit変更時にURLを更新
