@@ -28,8 +28,8 @@ const UNIT_FILES: UnitFile[] = [
   { unitNumber: 6, filepath: '/flash-phrase/unit6.csv' },
   { unitNumber: 7, filepath: '/flash-phrase/unit7.csv' },
   { unitNumber: 8, filepath: '/flash-phrase/unit8.csv' },
-  // { unitNumber: 9, filepath: '/flash-phrase/unit9.csv' },
-  // { unitNumber: 10, filepath: '/flash-phrase/unit10.csv' },
+  { unitNumber: 9, filepath: '/flash-phrase/unit9.csv' },
+  { unitNumber: 10, filepath: '/flash-phrase/unit10.csv' },
 ]
 
 function App() {
