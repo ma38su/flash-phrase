@@ -75,34 +75,32 @@ const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick
           <IconArrowRight size={32} stroke={2.5} />
         </div>
       </div>
-      <div className="w-full h-full flex flex-col justify-center items-center pointer-events-none">
+      <div className="w-full h-full flex flex-col justify-start items-center pointer-events-none">
         {!reverseMode ? (
           <>
             <p className="text-2xl sm:text-3xl mb-6 sm:mb-8 text-gray-100 font-medium tracking-wide flex flex-col items-center text-center">
               {phrase.JA}
             </p>
-            {showEnglish && (
-              <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 flex flex-col items-center">
-                <div className="w-32 sm:w-48 border-t-2 border-indigo-700 mb-4 sm:mb-6"></div>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  <p className="text-xl sm:text-2xl text-indigo-300 font-semibold text-center">
-                    {phrase.EN}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={e => { 
-                      e.stopPropagation(); 
-                      e.preventDefault();
-                      onSpeak(phrase.EN); 
-                    }}
-                    className="self-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-sm px-2 sm:px-3 py-1 shadow-md text-sm sm:text-base pointer-events-auto relative z-20"
-                    aria-label="英文を再生"
-                  >
-                    <IconVolume size={18} stroke={2} />
-                  </button>
-                </div>
+            <div className={`mt-6 sm:mt-8 pt-6 sm:pt-8 flex flex-col items-center ${showEnglish ? '' : 'invisible'}`}>
+              <div className="w-32 sm:w-48 border-t-2 border-indigo-700 mb-4 sm:mb-6"></div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <p className="text-xl sm:text-2xl text-indigo-300 font-semibold text-center">
+                  {phrase.EN}
+                </p>
+                <button
+                  type="button"
+                  onClick={e => { 
+                    e.stopPropagation(); 
+                    e.preventDefault();
+                    onSpeak(phrase.EN); 
+                  }}
+                  className="self-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-sm px-2 sm:px-3 py-1 shadow-md text-sm sm:text-base pointer-events-auto relative z-20"
+                  aria-label="英文を再生"
+                >
+                  <IconVolume size={18} stroke={2} />
+                </button>
               </div>
-            )}
+            </div>
           </>
         ) : (
           <>
@@ -123,14 +121,12 @@ const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick
                 <IconVolume size={18} stroke={2} />
               </button>
             </div>
-            {showEnglish && (
-              <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 flex flex-col items-center">
-                <div className="w-32 sm:w-48 border-t-2 border-pink-700 mb-4 sm:mb-6"></div>
-                <p className="text-xl sm:text-2xl text-gray-100 font-medium text-center">
-                  {phrase.JA}
-                </p>
-              </div>
-            )}
+            <div className={`mt-6 sm:mt-8 pt-6 sm:pt-8 flex flex-col items-center ${showEnglish ? '' : 'invisible'}`}>
+              <div className="w-32 sm:w-48 border-t-2 border-pink-700 mb-4 sm:mb-6"></div>
+              <p className="text-xl sm:text-2xl text-gray-100 font-medium text-center">
+                {phrase.JA}
+              </p>
+            </div>
           </>
         )}
       </div>
