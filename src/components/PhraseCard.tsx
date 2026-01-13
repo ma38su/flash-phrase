@@ -1,5 +1,5 @@
 import React from 'react';
-import { IconArrowLeft, IconArrowRight, IconVolume, IconRefresh, IconHome } from '@tabler/icons-react';
+import { IconArrowLeft, IconArrowRight, IconVolume, IconArrowsShuffle, IconHome } from '@tabler/icons-react';
 import type { Phrase } from '../types';
 
 interface Props {
@@ -26,12 +26,17 @@ const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick
         <IconHome size={18} stroke={2} />
         <span className="hidden sm:inline">ユニット選択に戻る</span>
       </button>
-      <h2 className="text-2xl font-bold text-gray-100">{unitLabel}</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+        <h2 className="text-2xl font-bold text-gray-100">{unitLabel}</h2>
+        <div className="text-sm sm:text-base text-gray-300 font-medium bg-gray-700 px-2 py-1 rounded-sm">
+          {index + 1} / {total}
+        </div>
+      </div>
       <button
         onClick={onShuffle}
         className="ml-auto flex items-center gap-1 bg-indigo-700 hover:bg-indigo-800 text-white font-semibold py-1 sm:py-2 px-2 sm:px-3 rounded-sm transition duration-200 shadow-md text-sm"
       >
-        <IconRefresh size={16} stroke={2} />
+        <IconArrowsShuffle size={16} stroke={2} />
         <span className="hidden sm:inline">シャッフル</span>
       </button>
     </div>
