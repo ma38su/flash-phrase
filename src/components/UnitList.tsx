@@ -17,7 +17,7 @@ interface Props {
   disableNext: boolean;
 }
 
-const UnitList: React.FC<Props> = ({ phrases, showEN, showJA, onToggleEN, onToggleJA, onSpeak, onPrev, onNext, disablePrev, disableNext }) => (
+const UnitList: React.FC<Props> = ({ phrases, showEN, showJA, onToggleEN, onToggleJA, onSpeak, unit, units, onPrev, onNext, disablePrev, disableNext }) => (
   <>
     <div className="flex gap-4 mb-4 justify-center">
       <label className="flex items-center gap-2 cursor-pointer">
@@ -58,22 +58,31 @@ const UnitList: React.FC<Props> = ({ phrases, showEN, showJA, onToggleEN, onTogg
         ))}
       </ul>
       <div className="flex justify-between mt-8 gap-4">
-        <button
-          disabled={disablePrev}
-          onClick={onPrev}
-          className={`flex items-center gap-1 sm:gap-2 bg-gray-700 hover:bg-gray-600 text-gray-100 font-semibold py-2 px-3 sm:px-4 rounded-sm transition duration-200 shadow-md ${disablePrev ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          <IconArrowLeft size={20} stroke={2} />
-          <span className="hidden sm:inline">前のユニット</span>
-        </button>
-        <button
-          disabled={disableNext}
-          onClick={onNext}
-          className={`flex items-center gap-1 sm:gap-2 bg-gray-700 hover:bg-gray-600 text-gray-100 font-semibold py-2 px-3 sm:px-4 rounded-sm transition duration-200 shadow-md ${disableNext ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          <span className="hidden sm:inline">次のユニット</span>
-          <IconArrowRight size={20} stroke={2} />
-        </button>
+        <div className="flex-1">
+          {!disablePrev && (
+            <button
+              onClick={onPrev}
+              className="flex items-center gap-1 sm:gap-2 bg-gray-700 hover:bg-gray-600 text-gray-100 font-semibold py-2 px-3 sm:px-4 rounded-sm transition duration-200 shadow-md"
+            >
+              <IconArrowLeft size={20} stroke={2} />
+              <span className="hidden sm:inline">Unit {units[units.indexOf(unit) - 1]}へ</span>
+              <span className="sm:hidden">Unit {units[units.indexOf(unit) - 1]}</span>
+            </button>
+          )}
+        </div>
+        
+        <div className="flex-1 flex justify-end">
+          {!disableNext && (
+            <button
+              onClick={onNext}
+              className="flex items-center gap-1 sm:gap-2 bg-gray-700 hover:bg-gray-600 text-gray-100 font-semibold py-2 px-3 sm:px-4 rounded-sm transition duration-200 shadow-md"
+            >
+              <span className="hidden sm:inline">Unit {units[units.indexOf(unit) + 1]}へ</span>
+              <span className="sm:hidden">Unit {units[units.indexOf(unit) + 1]}</span>
+              <IconArrowRight size={20} stroke={2} />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   </>
