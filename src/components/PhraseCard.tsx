@@ -14,9 +14,10 @@ interface Props {
   unitLabel: string;
   onBack: () => void;
   onShuffle: () => void;
+  isRandom: boolean;
 }
 
-const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick, onSpeak, onPrev, total, index, unitLabel, onBack, onShuffle }) => (
+const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick, onSpeak, onPrev, total, index, unitLabel, onBack, onShuffle, isRandom }) => (
   <div>
     <div className="flex items-center mb-6 gap-4">
       <button
@@ -34,10 +35,14 @@ const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick
       </div>
       <button
         onClick={onShuffle}
-        className="ml-auto flex items-center gap-1 bg-indigo-700 hover:bg-indigo-800 text-white font-semibold py-1 sm:py-2 px-2 sm:px-3 rounded-sm transition duration-200 shadow-md text-sm"
+        className={`ml-auto flex items-center gap-1 font-semibold py-1 sm:py-2 px-2 sm:px-3 rounded-sm transition duration-200 shadow-md text-sm ${
+          isRandom 
+            ? 'bg-pink-600 hover:bg-pink-700 text-white' 
+            : 'bg-indigo-700 hover:bg-indigo-800 text-white'
+        }`}
       >
         <IconArrowsShuffle size={16} stroke={2} />
-        <span className="hidden sm:inline">シャッフル</span>
+        <span className="hidden sm:inline">シャッフル{isRandom ? ' ON' : ''}</span>
       </button>
     </div>
     <div className="bg-gray-800 rounded-sm shadow-2xl p-8 cursor-pointer hover:shadow-3xl transition duration-200 min-h-100 flex flex-col justify-center items-center select-none relative overflow-hidden">

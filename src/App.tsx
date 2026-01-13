@@ -339,10 +339,9 @@ function App() {
           unitLabel={getUnitLabel(selectedUnit)}
           onBack={() => setSelectedUnit(null)}
           onShuffle={() => {
-            if (selectedUnit !== null) {
-              handleSelectUnit(selectedUnit);
-            }
+            toggleRandomMode();
           }}
+          isRandom={isRandom}
         />
       </div>
     </div>
