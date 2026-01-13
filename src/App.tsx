@@ -10,7 +10,9 @@ import { useSpeech } from './hooks/useSpeech'
 import { shufflePhrases, filterPhrasesByUnit, getUnitLabel } from './utils/phraseUtils'
 
 function App() {
-  const { phrases, units, loading } = useCSVLoader();
+  const { units, loadUnit, isUnitLoading, getLoadedUnit } = useCSVLoader();
+  const [phrases, setPhrases] = useState<Phrase[]>([]);
+  const [loading, setLoading] = useState(false);
   const { speakEnglish } = useSpeech();
   
   const [selectedUnit, setSelectedUnit] = useState<SelectedUnit>(null)
@@ -29,13 +31,8 @@ function App() {
   const [showListEN, setShowListEN] = useState(true);
   const [showListJA, setShowListJA] = useState(true);
 
-  // URLから状態を復元する関数
-  const restoreStateFromURL = () => {
-    if (phrases.length === 0) {
-      // フレーズがまだ読み込まれていない場合は処理しない
-      return;
-    }
-    
+  // URLから状態を復元する関数（動的読み込み対応）
+  const restoreStateFromURL = async () => {
     const hash = window.location.hash.substring(1); // #を除去
     const [path, queryString] = hash.split('?');
     const searchParams = new URLSearchParams(queryString || '');
@@ -61,12 +58,14 @@ function App() {
         // ユニット一覧表示
         const unitNum = parseInt(unitOrAll.replace('unit', ''));
         if (!isNaN(unitNum)) {
-          setShowUnitList(unitNum);
           // 一覧表示の表示設定を復元
           const showEN = searchParams.get('showEN');
           const showJA = searchParams.get('showJA');
           if (showEN !== null) setShowListEN(showEN === 'true');
           if (showJA !== null) setShowListJA(showJA === 'true');
+          
+          // データを読み込んでから一覧表示
+          await handleShowUnitList(unitNum);
         }
       } else if (mode === 'ja-en' || mode === 'en-ja') {
         // フレーズ表示モード
@@ -85,16 +84,9 @@ function App() {
         const index = parseInt(searchParams.get('index') || '0');
         const showEnglish = searchParams.get('show') === 'true';
         
-        // currentPhrasesを設定
-        const unitPhrases = filterPhrasesByUnit(phrases, unit);
-        const randomParam = searchParams.get('random');
-        const orderedPhrases = randomParam === 'true'
-          ? shufflePhrases(unitPhrases)
-          : unitPhrases;
-        
-        setCurrentPhrases(orderedPhrases);
-        setSelectedUnit(unit);
-        setCurrentIndex(Math.min(index, orderedPhrases.length - 1));
+        // データを読み込んでからフレーズ表示
+        await handleSelectUnit(unit);
+        setCurrentIndex(index);
         setShowEnglish(showEnglish);
       }
     }
@@ -116,24 +108,20 @@ function App() {
     window.location.hash = hash;
   };
 
-  // phrasesが読み込まれた後にURL状態を復元
+  // 初回読み込み時のURL状態復元
   useEffect(() => {
-    if (phrases.length > 0 && !loading) {
-      restoreStateFromURL();
-    }
-  }, [phrases, loading]);
+    restoreStateFromURL();
+  }, []); // 初回のみ実行
 
   // ブラウザの戻る/進むボタンとハッシュ変更に対応
   useEffect(() => {
     const handleHashChange = () => {
-      if (phrases.length > 0) {
-        restoreStateFromURL();
-      }
+      restoreStateFromURL();
     };
     
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [phrases]);
+  }, []);
 
   // selectedUnit変更時にURLを更新
   useEffect(() => {
@@ -175,14 +163,36 @@ function App() {
   }, [showUnitList, showListEN, showListJA, loading]);
 
   // ユニット選択時
-  const handleSelectUnit = (unit: SelectedUnit) => {
+  const handleSelectUnit = async (unit: SelectedUnit) => {
     if (unit === null) return;
     
-    const unitPhrases = filterPhrasesByUnit(phrases, unit);
-    const orderedPhrases = isRandom 
-      ? shufflePhrases(unitPhrases)
-      : unitPhrases;
-    setCurrentPhrases(orderedPhrases);
+    setLoading(true);
+    try {
+      let allPhrases: Phrase[];
+      
+      if (unit === 'all') {
+        // 全ユニットを読み込む
+        allPhrases = [];
+        for (const unitNumber of units) {
+          const unitPhrases = await loadUnit(unitNumber);
+          allPhrases.push(...unitPhrases);
+        }
+      } else {
+        // 指定ユニットのみ読み込む
+        allPhrases = await loadUnit(unit);
+      }
+
+      const orderedPhrases = isRandom 
+        ? shufflePhrases(allPhrases)
+        : allPhrases;
+      setCurrentPhrases(orderedPhrases);
+      setPhrases(allPhrases); // 後続の処理のためにphrasesも更新
+    } catch (error) {
+      console.error(`Failed to load unit data:`, error);
+    } finally {
+      setLoading(false);
+    }
+    
     setSelectedUnit(unit);
     setCurrentIndex(0);
     setShowEnglish(false);
@@ -190,7 +200,15 @@ function App() {
   }
 
   // ユニット一覧表示への切り替え
-  const handleShowUnitList = (unit: number) => {
+  const handleShowUnitList = async (unit: number) => {
+    // まだ読み込まれていない場合は読み込む
+    if (!getLoadedUnit(unit).length && !isUnitLoading(unit)) {
+      try {
+        await loadUnit(unit);
+      } catch (error) {
+        console.error(`Failed to load unit ${unit} for list view:`, error);
+      }
+    }
     setShowUnitList(unit);
     setSelectedUnit(null);
   };
@@ -276,14 +294,25 @@ function App() {
 
   // ユニット一覧画面
   if (showUnitList !== null) {
-    const unitPhrases = phrases.filter(p => p.Unit === showUnitList);
+    const unitPhrases = getLoadedUnit(showUnitList);
     const currentUnitIndex = units.indexOf(showUnitList);
     
-    const handleUnitNavigation = (direction: 'prev' | 'next') => {
+    const handleUnitNavigation = async (direction: 'prev' | 'next') => {
       const newIndex = direction === 'prev' 
         ? Math.max(0, currentUnitIndex - 1)
         : Math.min(units.length - 1, currentUnitIndex + 1);
-      setShowUnitList(units[newIndex]);
+      const newUnit = units[newIndex];
+      
+      // 新しいユニットが読み込まれていない場合は読み込む
+      if (!getLoadedUnit(newUnit).length && !isUnitLoading(newUnit)) {
+        try {
+          await loadUnit(newUnit);
+        } catch (error) {
+          console.error(`Failed to load unit ${newUnit}:`, error);
+        }
+      }
+      
+      setShowUnitList(newUnit);
     };
     
     return (
