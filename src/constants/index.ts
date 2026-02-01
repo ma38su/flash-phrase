@@ -26,7 +26,7 @@ export const SPEECH_CONFIG: Record<Language, { language: string; preferredVoices
   ja: {
     language: 'ja-JP',
     preferredVoices: /Google|Microsoft|Apple|Kyoko|Otoya/i,
-    rate: 1.2, // 日本語は少し速め
+    rate: 1.0, // 速度: 0.1～10　1が標準
   },
 } as const;
 

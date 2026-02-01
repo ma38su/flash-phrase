@@ -5,17 +5,21 @@ import PhraseCard from './components/PhraseCard'
 import UnitList from './components/UnitList'
 import UnitListHeader from './components/UnitListHeader'
 import PageContainer from './components/PageContainer'
+import SettingsPage from './components/SettingsPage'
 import type { Phrase, SelectedUnit } from './types'
 import { useCSVLoader } from './hooks/useCSVLoader'
 import { useSpeech } from './hooks/useSpeech'
+import { useSettings } from './hooks/useSettings'
+import { useVoices } from './hooks/useVoices'
 import { shufflePhrases, filterPhrasesByUnit, getUnitLabel } from './utils/phraseUtils'
-import { AUTO_PLAY_CONFIG } from './constants'
 
 function App() {
   const { units, loadUnit, isUnitLoading, getLoadedUnit } = useCSVLoader();
   const [phrases, setPhrases] = useState<Phrase[]>([]);
   const [loading, setLoading] = useState(false);
-  const { speak, cancelSpeech } = useSpeech();
+  const { settings, updateSettings, resetSettings } = useSettings();
+  const { speak, cancelSpeech } = useSpeech(settings);
+  const { englishVoices, japaneseVoices } = useVoices();
   
   const [selectedUnit, setSelectedUnit] = useState<SelectedUnit>(null)
   const [currentPhrases, setCurrentPhrases] = useState<Phrase[]>([])
@@ -38,6 +42,15 @@ function App() {
   const autoPlayTimerRef = useRef<NodeJS.Timeout | null>(null);
   const autoPlayActiveRef = useRef(false); // 自動再生シーケンスが進行中かどうか
   const currentIndexRef = useRef(0); // 自動再生用の現在インデックス
+  const settingsRef = useRef(settings); // 自動再生用の設定参照
+
+  // 設定ページの表示状態
+  const [showSettings, setShowSettings] = useState(false);
+
+  // settingsの変更を追跡
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
 
   // URLから状態を復元する関数（動的読み込み対応）
   const restoreStateFromURL = async () => {
@@ -333,9 +346,9 @@ function App() {
               setShowEnglish(false);
               autoPlayActiveRef.current = false;
             }
-          }, AUTO_PLAY_CONFIG.DELAY_BEFORE_NEXT);
+          }, settingsRef.current.delayBeforeNext);
         });
-      }, AUTO_PLAY_CONFIG.DELAY_BEFORE_ANSWER);
+      }, settingsRef.current.delayBeforeAnswer);
     });
   }, [currentPhrases, reverseMode, speak]);
 
@@ -358,6 +371,31 @@ function App() {
   }, [selectedUnit, showUnitList, stopAutoPlay]);
 
 
+  // 設定ページ
+  if (showSettings) {
+    return (
+      <SettingsPage
+        settings={settings}
+        onUpdateSettings={updateSettings}
+        onResetSettings={resetSettings}
+        onBack={() => setShowSettings(false)}
+        onTestSpeech={(language) => {
+          // テスト前に現在の音声を確実に停止
+          cancelSpeech();
+          // 少し待ってから再生（Chromeのハング防止）
+          setTimeout(() => {
+            const testText = language === 'en' 
+              ? 'This is a test of the voice type and speech speed settings.'
+              : 'これは音声の種類と読み上げ速度のテストです。';
+            speak(testText, language);
+          }, 100);
+        }}
+        englishVoices={englishVoices}
+        japaneseVoices={japaneseVoices}
+      />
+    );
+  }
+
   // ユニット選択前画面
   if (!selectedUnit && showUnitList === null) {
     return (
@@ -371,7 +409,7 @@ function App() {
           ) : (
             <>
               <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-200 text-center">ユニットを選択してください</h2>
-              <div className="mb-4 sm:mb-6 flex items-center justify-center">
+              <div className="mb-4 sm:mb-6 flex items-center justify-center gap-4 sm:gap-6">
                 <label className="flex items-center cursor-pointer">
                   <input
                     type="checkbox"
@@ -383,6 +421,12 @@ function App() {
                     🔀 ランダム表示
                   </span>
                 </label>
+                <button
+                  onClick={() => setShowSettings(true)}
+                  className="text-base sm:text-lg text-gray-400 hover:text-gray-200 font-medium transition"
+                >
+                  ⚙️ 音声設定
+                </button>
               </div>
               <UnitSelect
                 units={units}
