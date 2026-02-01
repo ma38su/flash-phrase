@@ -13,7 +13,7 @@ function App() {
   const { units, loadUnit, isUnitLoading, getLoadedUnit } = useCSVLoader();
   const [phrases, setPhrases] = useState<Phrase[]>([]);
   const [loading, setLoading] = useState(false);
-  const { speakEnglish } = useSpeech();
+  const { speak } = useSpeech();
   
   const [selectedUnit, setSelectedUnit] = useState<SelectedUnit>(null)
   const [currentPhrases, setCurrentPhrases] = useState<Phrase[]>([])
@@ -332,7 +332,8 @@ function App() {
             showJA={showListJA}
             onToggleEN={() => setShowListEN(v => !v)}
             onToggleJA={() => setShowListJA(v => !v)}
-            onSpeak={speakEnglish}
+            onSpeak={(text) => speak(text, 'en')}
+            onSpeakJapanese={(text) => speak(text, 'ja')}
             unit={showUnitList}
             units={units}
             onPrev={() => handleUnitNavigation('prev')}
@@ -356,7 +357,8 @@ function App() {
           showEnglish={showEnglish}
           reverseMode={reverseMode}
           onClick={handleClick}
-          onSpeak={speakEnglish}
+          onSpeak={(text) => speak(text, 'en')}
+          onSpeakJapanese={(text) => speak(text, 'ja')}
           onPrev={() => {
             if (currentIndex > 0) {
               setCurrentIndex(currentIndex - 1);

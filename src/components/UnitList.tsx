@@ -9,6 +9,7 @@ interface Props {
   onToggleEN: () => void;
   onToggleJA: () => void;
   onSpeak: (text: string) => void;
+  onSpeakJapanese: (text: string) => void;
   unit: number;
   units: number[];
   onPrev: () => void;
@@ -17,7 +18,7 @@ interface Props {
   disableNext: boolean;
 }
 
-const UnitList: React.FC<Props> = ({ phrases, showEN, showJA, onToggleEN, onToggleJA, onSpeak, unit, units, onPrev, onNext, disablePrev, disableNext }) => (
+const UnitList: React.FC<Props> = ({ phrases, showEN, showJA, onToggleEN, onToggleJA, onSpeak, onSpeakJapanese, unit, units, onPrev, onNext, disablePrev, disableNext }) => (
   <>
     <div className="flex gap-4 mb-4 justify-center">
       <label className="flex items-center gap-2 cursor-pointer">
@@ -38,20 +39,30 @@ const UnitList: React.FC<Props> = ({ phrases, showEN, showJA, onToggleEN, onTogg
               {showEN && (
                 <div className="mb-1">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                    <span className="text-indigo-300 text-sm sm:text-base md:text-lg wrap-break-word font-semibold">{phrase.EN}</span>
                     <button
                       type="button"
                       onClick={e => { e.stopPropagation(); onSpeak(phrase.EN); }}
-                      className="self-start sm:ml-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-sm px-2 py-1 shadow-md text-xs sm:text-base pointer-events-auto"
+                      className="self-start bg-indigo-600 hover:bg-indigo-700 text-white rounded-sm px-2 py-1 shadow-md text-xs sm:text-base pointer-events-auto"
                       aria-label="英文を再生"
                     >
                       <IconVolume size={16} stroke={2} />
                     </button>
+                    <span className="text-indigo-300 text-sm sm:text-base md:text-lg wrap-break-word font-semibold">{phrase.EN}</span>
                   </div>
                 </div>
               )}
               {showJA && (
-                <span className="text-gray-100 text-sm sm:text-base md:text-lg wrap-break-word">{phrase.JA}</span>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                  <button
+                    type="button"
+                    onClick={e => { e.stopPropagation(); onSpeakJapanese(phrase.JA); }}
+                    className="self-start bg-pink-600 hover:bg-pink-700 text-white rounded-sm px-2 py-1 shadow-md text-xs sm:text-base pointer-events-auto"
+                    aria-label="日本語を再生"
+                  >
+                    <IconVolume size={16} stroke={2} />
+                  </button>
+                  <span className="text-gray-100 text-sm sm:text-base md:text-lg wrap-break-word">{phrase.JA}</span>
+                </div>
               )}
             </div>
           </li>

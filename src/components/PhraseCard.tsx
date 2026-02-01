@@ -8,6 +8,7 @@ interface Props {
   reverseMode: boolean;
   onClick: () => void;
   onSpeak: (text: string) => void;
+  onSpeakJapanese: (text: string) => void;
   onPrev: () => void;
   total: number;
   index: number;
@@ -17,7 +18,7 @@ interface Props {
   isRandom: boolean;
 }
 
-const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick, onSpeak, onPrev, total, index, unitLabel, onBack, onShuffle, isRandom }) => {
+const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick, onSpeak, onSpeakJapanese, onPrev, total, index, unitLabel, onBack, onShuffle, isRandom }) => {
   return (
     <div>
       <div className="flex items-center mb-6 gap-4">
@@ -78,15 +79,26 @@ const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick
       <div className="w-full h-full flex flex-col justify-start items-center pointer-events-none">
         {!reverseMode ? (
           <>
-            <p className="text-2xl sm:text-3xl mb-6 sm:mb-8 text-gray-100 font-medium tracking-wide flex flex-col items-center text-center">
-              {phrase.JA}
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-6 sm:mb-8 justify-center">
+              <button
+                type="button"
+                onClick={e => { 
+                  e.stopPropagation(); 
+                  e.preventDefault();
+                  onSpeakJapanese(phrase.JA); 
+                }}
+                className="self-center bg-pink-600 hover:bg-pink-700 text-white rounded-sm px-2 sm:px-3 py-1 shadow-md text-sm sm:text-base pointer-events-auto relative z-20"
+                aria-label="日本語を再生"
+              >
+                <IconVolume size={18} stroke={2} />
+              </button>
+              <p className="text-2xl sm:text-3xl text-gray-100 font-medium tracking-wide text-center">
+                {phrase.JA}
+              </p>
+            </div>
             <div className={`mt-6 sm:mt-8 pt-6 sm:pt-8 flex flex-col items-center ${showEnglish ? '' : 'invisible'}`}>
               <div className="w-32 sm:w-48 border-t-2 border-indigo-700 mb-4 sm:mb-6"></div>
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <p className="text-xl sm:text-2xl text-indigo-300 font-semibold text-center">
-                  {phrase.EN}
-                </p>
                 <button
                   type="button"
                   onClick={e => { 
@@ -99,15 +111,15 @@ const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick
                 >
                   <IconVolume size={18} stroke={2} />
                 </button>
+                <p className="text-xl sm:text-2xl text-indigo-300 font-semibold text-center">
+                  {phrase.EN}
+                </p>
               </div>
             </div>
           </>
         ) : (
           <>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-6 sm:mb-8 justify-center">
-              <p className="text-2xl sm:text-3xl text-indigo-300 font-semibold tracking-wide text-center">
-                {phrase.EN}
-              </p>
               <button
                 type="button"
                 onClick={e => { 
@@ -120,12 +132,29 @@ const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick
               >
                 <IconVolume size={18} stroke={2} />
               </button>
+              <p className="text-2xl sm:text-3xl text-indigo-300 font-semibold tracking-wide text-center">
+                {phrase.EN}
+              </p>
             </div>
             <div className={`mt-6 sm:mt-8 pt-6 sm:pt-8 flex flex-col items-center ${showEnglish ? '' : 'invisible'}`}>
               <div className="w-32 sm:w-48 border-t-2 border-pink-700 mb-4 sm:mb-6"></div>
-              <p className="text-xl sm:text-2xl text-gray-100 font-medium text-center">
-                {phrase.JA}
-              </p>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <button
+                  type="button"
+                  onClick={e => { 
+                    e.stopPropagation(); 
+                    e.preventDefault();
+                    onSpeakJapanese(phrase.JA); 
+                  }}
+                  className="self-center bg-pink-600 hover:bg-pink-700 text-white rounded-sm px-2 sm:px-3 py-1 shadow-md text-sm sm:text-base pointer-events-auto relative z-20"
+                  aria-label="日本語を再生"
+                >
+                  <IconVolume size={18} stroke={2} />
+                </button>
+                <p className="text-xl sm:text-2xl text-gray-100 font-medium text-center">
+                  {phrase.JA}
+                </p>
+              </div>
             </div>
           </>
         )}

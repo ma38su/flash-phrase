@@ -15,7 +15,15 @@ export const UNIT_FILES: UnitFile[] = [
 ];
 
 // 音声合成の設定
-export const SPEECH_CONFIG = {
-  LANGUAGE: 'en-US',
-  PREFERRED_VOICES: /Google|Microsoft|Apple|Samantha|Daniel|Karen|Moira|Fiona/i,
+export type Language = 'en' | 'ja';
+
+export const SPEECH_CONFIG: Record<Language, { language: string; preferredVoices: RegExp }> = {
+  en: {
+    language: 'en-US',
+    preferredVoices: /Google|Microsoft|Apple|Samantha|Daniel|Karen|Moira|Fiona/i,
+  },
+  ja: {
+    language: 'ja-JP',
+    preferredVoices: /Google|Microsoft|Apple|Kyoko|Otoya/i,
+  },
 } as const;
