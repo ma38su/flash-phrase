@@ -1,5 +1,5 @@
 import React from 'react';
-import { IconArrowLeft, IconArrowRight, IconVolume, IconArrowsShuffle, IconHome, IconPlayerPlay, IconPlayerPause } from '@tabler/icons-react';
+import { IconArrowLeft, IconArrowRight, IconVolume, IconArrowsShuffle, IconHome, IconVolumeOff } from '@tabler/icons-react';
 import type { Phrase } from '../types';
 
 interface Props {
@@ -16,11 +16,11 @@ interface Props {
   onBack: () => void;
   onShuffle: () => void;
   isRandom: boolean;
-  isAutoPlay: boolean;
-  onToggleAutoPlay: () => void;
+  isAutoSpeak: boolean;
+  onToggleAutoSpeak: () => void;
 }
 
-const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick, onSpeak, onSpeakJapanese, onPrev, total, index, unitLabel, onBack, onShuffle, isRandom, isAutoPlay, onToggleAutoPlay }) => {
+const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick, onSpeak, onSpeakJapanese, onPrev, total, index, unitLabel, onBack, onShuffle, isRandom, isAutoSpeak, onToggleAutoSpeak }) => {
   return (
     <div>
       <div className="flex items-center mb-6 gap-2">
@@ -50,15 +50,15 @@ const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick
           <span className="hidden sm:inline">シャッフル{isRandom ? ' ON' : ' OFF'}</span>
         </button>
       <button
-        onClick={onToggleAutoPlay}
+        onClick={onToggleAutoSpeak}
         className={`flex items-center gap-1 font-semibold py-1 sm:py-2 px-2 sm:px-3 rounded-sm transition duration-200 shadow-md text-sm ${
-          isAutoPlay 
+          isAutoSpeak 
             ? 'bg-green-600 hover:bg-green-700 text-white' 
             : 'bg-gray-600 hover:bg-gray-500 text-gray-200'
         }`}
       >
-        {isAutoPlay ? <IconPlayerPause size={16} stroke={2} /> : <IconPlayerPlay size={16} stroke={2} />}
-        <span className="hidden sm:inline">自動再生{isAutoPlay ? ' ON' : ' OFF'}</span>
+        {isAutoSpeak ? <IconVolume size={16} stroke={2} /> : <IconVolumeOff size={16} stroke={2} />}
+        <span className="hidden sm:inline">自動読み上げ{isAutoSpeak ? ' ON' : ' OFF'}</span>
       </button>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import './App.css'
 import UnitSelect from './components/UnitSelect'
 import PhraseCard from './components/PhraseCard'
@@ -11,7 +11,6 @@ import { useCSVLoader } from './hooks/useCSVLoader'
 import { useSpeech } from './hooks/useSpeech'
 import { useSettings } from './hooks/useSettings'
 import { useVoices } from './hooks/useVoices'
-import { useAutoPlay } from './hooks/useAutoPlay'
 import { useURLManager } from './hooks/useURLManager'
 import { shufflePhrases, filterPhrasesByUnit, getUnitLabel } from './utils/phraseUtils'
 
@@ -39,26 +38,17 @@ function App() {
   const [showListEN, setShowListEN] = useState(true);
   const [showListJA, setShowListJA] = useState(true);
 
-  // 自動再生モードの状態
-  const [isAutoPlay, setIsAutoPlay] = useState(false);
+  // 自動読み上げモードの状態（デフォルトON）
+  const [isAutoSpeak, setIsAutoSpeak] = useState(true);
 
   // 設定ページの表示状態
   const [showSettings, setShowSettings] = useState(false);
 
-  // 自動再生フック
-  const { startAutoPlay, stopAutoPlay, skipToNext, autoPlayActiveRef } = useAutoPlay({
-    displayPhrases,
-    currentIndex,
-    selectedUnit,
-    showUnitList,
-    reverseMode,
-    settings,
-    speak,
-    cancelSpeech,
-    setCurrentIndex,
-    setShowEnglish,
-    setSelectedUnit,
-  });
+  // 初回表示をスキップするためのref
+  const isInitialMountRef = useRef(true);
+
+  // URL管理用のダミーref（自動再生は削除したのでfalse固定）
+  const autoPlayActiveRef = useRef(false);
 
   // URL管理フック
   const { parseURL, skipNextHashChangeRef } = useURLManager({
@@ -197,13 +187,7 @@ function App() {
 
   // クリックで英訳表示/次のフレーズへ
   const handleClick = () => {
-    // 自動再生中は強制的に次のステップにスキップ
-    if (autoPlayActiveRef.current) {
-      skipToNext();
-      return;
-    }
-    
-    // 手動モード：表示切り替え時に再生中の音声をキャンセル
+    // 表示切り替え時に再生中の音声をキャンセル
     cancelSpeech();
     
     if (!showEnglish) {
@@ -223,27 +207,41 @@ function App() {
     }
   }
 
-  // 自動再生モードのトグル
-  const toggleAutoPlay = useCallback(() => {
-    setIsAutoPlay(prev => !prev);
+  // 自動読み上げモードのトグル
+  const toggleAutoSpeak = useCallback(() => {
+    setIsAutoSpeak(prev => !prev);
   }, []);
 
-  // isAutoPlayがtrueになったら自動再生シーケンスを開始
+  // 自動読み上げ：カード表示や答え表示が変わったときに読み上げ
   useEffect(() => {
-    if (isAutoPlay && selectedUnit !== null && showUnitList === null && !autoPlayActiveRef.current) {
-      startAutoPlay(currentIndex);
-    } else if (!isAutoPlay) {
-      stopAutoPlay();
+    // 初回マウント時はスキップ
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
     }
-  }, [isAutoPlay, selectedUnit, showUnitList, currentIndex, startAutoPlay, stopAutoPlay]);
-
-  // 自動再生中に画面を離れたら停止
-  useEffect(() => {
-    if (selectedUnit === null || showUnitList !== null) {
-      stopAutoPlay();
-      setIsAutoPlay(false);
+    
+    // 自動読み上げがOFFの場合はスキップ
+    if (!isAutoSpeak) return;
+    
+    // フレーズ表示画面でない場合はスキップ
+    if (selectedUnit === null || showUnitList !== null || loading) return;
+    
+    const phrase = displayPhrases[currentIndex];
+    if (!phrase) return;
+    
+    // 現在表示されているテキストを読み上げ
+    if (showEnglish) {
+      // 答え（英語 or 日本語）を読み上げ
+      const lang = reverseMode ? 'ja' : 'en';
+      const text = reverseMode ? phrase.JA : phrase.EN;
+      speak(text, lang);
+    } else {
+      // 問題（日本語 or 英語）を読み上げ
+      const lang = reverseMode ? 'en' : 'ja';
+      const text = reverseMode ? phrase.EN : phrase.JA;
+      speak(text, lang);
     }
-  }, [selectedUnit, showUnitList, stopAutoPlay]);
+  }, [currentIndex, showEnglish, selectedUnit, showUnitList]);
 
 
   // 設定ページ
@@ -395,8 +393,8 @@ function App() {
           toggleRandomMode();
         }}
         isRandom={isRandom}
-        isAutoPlay={isAutoPlay}
-        onToggleAutoPlay={toggleAutoPlay}
+        isAutoSpeak={isAutoSpeak}
+        onToggleAutoSpeak={toggleAutoSpeak}
       />
     </PageContainer>
   )
