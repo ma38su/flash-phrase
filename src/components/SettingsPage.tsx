@@ -148,57 +148,6 @@ const SettingsPage: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* 自動再生設定 */}
-        <div className="space-y-6 mb-8">
-          <h3 className="text-lg font-semibold text-gray-200 border-b border-gray-700 pb-2">
-            自動再生のインターバル
-          </h3>
-
-          {/* 答え表示前の待機時間 */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <label className="text-gray-300 font-medium">答え表示前</label>
-              <span className="text-gray-400 text-sm">{(settings.delayBeforeAnswer / 1000).toFixed(1)}秒</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="10000"
-              step="100"
-              value={settings.delayBeforeAnswer}
-              onChange={(e) => onUpdateSettings({ delayBeforeAnswer: parseInt(e.target.value) })}
-              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-green-500"
-            />
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>0秒</span>
-              <span>5秒</span>
-              <span>10秒</span>
-            </div>
-          </div>
-
-          {/* 次のフレーズ前の待機時間 */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <label className="text-gray-300 font-medium">次のフレーズ前</label>
-              <span className="text-gray-400 text-sm">{(settings.delayBeforeNext / 1000).toFixed(1)}秒</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="10000"
-              step="100"
-              value={settings.delayBeforeNext}
-              onChange={(e) => onUpdateSettings({ delayBeforeNext: parseInt(e.target.value) })}
-              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-green-500"
-            />
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>0秒</span>
-              <span>5秒</span>
-              <span>10秒</span>
-            </div>
-          </div>
-        </div>
-
         {/* リセットボタン */}
         <div className="flex justify-center">
           <button

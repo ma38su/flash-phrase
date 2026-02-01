@@ -38,8 +38,8 @@ function App() {
   const [showListEN, setShowListEN] = useState(true);
   const [showListJA, setShowListJA] = useState(true);
 
-  // 自動読み上げモードの状態（デフォルトON）
-  const [isAutoSpeak, setIsAutoSpeak] = useState(true);
+  // 自動読み上げモードの状態（cookieから初期化）
+  const [isAutoSpeak, setIsAutoSpeak] = useState(settings.autoSpeak);
 
   // 設定ページの表示状態
   const [showSettings, setShowSettings] = useState(false);
@@ -207,10 +207,14 @@ function App() {
     }
   }
 
-  // 自動読み上げモードのトグル
+  // 自動読み上げモードのトグル（cookieにも保存）
   const toggleAutoSpeak = useCallback(() => {
-    setIsAutoSpeak(prev => !prev);
-  }, []);
+    setIsAutoSpeak(prev => {
+      const newValue = !prev;
+      updateSettings({ autoSpeak: newValue });
+      return newValue;
+    });
+  }, [updateSettings]);
 
   // 自動読み上げ：カード表示や答え表示が変わったときに読み上げ
   useEffect(() => {
