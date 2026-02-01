@@ -14,15 +14,3 @@ export interface UnitFile {
 
 // ユニット選択可能な値の型
 export type SelectedUnit = number | 'all' | null;
-
-// 学習モード
-export type StudyMode = 'ja-en' | 'en-ja';
-
-// URL状態管理用の型
-export interface URLParams {
-  index?: string;
-  show?: string;
-  random?: string;
-  showEN?: string;
-  showJA?: string;
-}

@@ -119,11 +119,6 @@ export const useAutoPlay = ({
     runAutoPlaySequence(startIndex);
   }, [runAutoPlaySequence]);
 
-  // 自動再生中かどうかを返す
-  const isAutoPlayActive = useCallback(() => {
-    return autoPlayActiveRef.current;
-  }, []);
-
   // 画面を離れたら自動再生を停止
   useEffect(() => {
     if (selectedUnit === null || showUnitList !== null) {
@@ -141,7 +136,6 @@ export const useAutoPlay = ({
   return {
     startAutoPlay,
     stopAutoPlay,
-    isAutoPlayActive,
     autoPlayActiveRef, // URL更新スキップ用に公開
   };
 };
