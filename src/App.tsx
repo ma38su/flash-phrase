@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import UnitSelect from './components/UnitSelect'
 import PhraseCard from './components/PhraseCard'
@@ -8,6 +8,7 @@ import type { Phrase, SelectedUnit } from './types'
 import { useCSVLoader } from './hooks/useCSVLoader'
 import { useSpeech } from './hooks/useSpeech'
 import { shufflePhrases, filterPhrasesByUnit, getUnitLabel } from './utils/phraseUtils'
+import { AUTO_PLAY_CONFIG } from './constants'
 
 function App() {
   const { units, loadUnit, isUnitLoading, getLoadedUnit } = useCSVLoader();
@@ -30,6 +31,10 @@ function App() {
   // 一覧表示の英語・日本語表示状態
   const [showListEN, setShowListEN] = useState(true);
   const [showListJA, setShowListJA] = useState(true);
+
+  // 自動再生モードの状態
+  const [isAutoPlay, setIsAutoPlay] = useState(false);
+  const autoPlayTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // URLから状態を復元する関数（動的読み込み対応）
   const restoreStateFromURL = async () => {
@@ -249,6 +254,72 @@ function App() {
     }
   }
 
+  // 自動再生モードのトグル
+  const toggleAutoPlay = () => {
+    setIsAutoPlay(prev => !prev);
+  }
+
+  // 自動再生モードのロジック
+  useEffect(() => {
+    if (!isAutoPlay || !selectedUnit || showUnitList !== null) {
+      // タイマーと音声をクリア
+      if (autoPlayTimerRef.current) {
+        clearTimeout(autoPlayTimerRef.current);
+        autoPlayTimerRef.current = null;
+      }
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      return;
+    }
+
+    const currentPhrase = currentPhrases[currentIndex];
+    if (!currentPhrase) return;
+
+    // クリーンアップ関数
+    const cleanup = () => {
+      if (autoPlayTimerRef.current) {
+        clearTimeout(autoPlayTimerRef.current);
+        autoPlayTimerRef.current = null;
+      }
+    };
+
+    // 最初の言語を読み上げ
+    if (!showEnglish) {
+      const firstLang = reverseMode ? 'en' : 'ja';
+      const firstText = reverseMode ? currentPhrase.EN : currentPhrase.JA;
+      
+      speak(firstText, firstLang, () => {
+        // 読み上げ完了後、一定時間待ってから答えを表示
+        autoPlayTimerRef.current = setTimeout(() => {
+          setShowEnglish(true);
+        }, AUTO_PLAY_CONFIG.DELAY_BEFORE_ANSWER);
+      });
+    } else {
+      // 答えの言語を読み上げ
+      const secondLang = reverseMode ? 'ja' : 'en';
+      const secondText = reverseMode ? currentPhrase.JA : currentPhrase.EN;
+      
+      speak(secondText, secondLang, () => {
+        // 読み上げ完了後、一定時間待ってから次へ
+        autoPlayTimerRef.current = setTimeout(() => {
+          if (currentIndex < currentPhrases.length - 1) {
+            setCurrentIndex(prev => prev + 1);
+            setShowEnglish(false);
+          } else {
+            // 最後のフレーズなので自動再生を停止
+            setIsAutoPlay(false);
+            setSelectedUnit(null);
+            setCurrentIndex(0);
+            setShowEnglish(false);
+          }
+        }, AUTO_PLAY_CONFIG.DELAY_BEFORE_NEXT);
+      });
+    }
+
+    return cleanup;
+  }, [isAutoPlay, selectedUnit, showUnitList, currentIndex, showEnglish, reverseMode, currentPhrases]);
+
 
   // ユニット選択前画面
   if (!selectedUnit && showUnitList === null) {
@@ -373,6 +444,8 @@ function App() {
             toggleRandomMode();
           }}
           isRandom={isRandom}
+          isAutoPlay={isAutoPlay}
+          onToggleAutoPlay={toggleAutoPlay}
         />
       </div>
     </div>

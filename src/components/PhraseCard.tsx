@@ -1,5 +1,5 @@
 import React from 'react';
-import { IconArrowLeft, IconArrowRight, IconVolume, IconArrowsShuffle, IconHome } from '@tabler/icons-react';
+import { IconArrowLeft, IconArrowRight, IconVolume, IconArrowsShuffle, IconHome, IconPlayerPlay, IconPlayerPause } from '@tabler/icons-react';
 import type { Phrase } from '../types';
 
 interface Props {
@@ -16,15 +16,17 @@ interface Props {
   onBack: () => void;
   onShuffle: () => void;
   isRandom: boolean;
+  isAutoPlay: boolean;
+  onToggleAutoPlay: () => void;
 }
 
-const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick, onSpeak, onSpeakJapanese, onPrev, total, index, unitLabel, onBack, onShuffle, isRandom }) => {
+const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick, onSpeak, onSpeakJapanese, onPrev, total, index, unitLabel, onBack, onShuffle, isRandom, isAutoPlay, onToggleAutoPlay }) => {
   return (
     <div>
-      <div className="flex items-center mb-6 gap-4">
+      <div className="flex items-center mb-6 gap-2">
       <button
         onClick={onBack}
-        className="bg-gray-700 hover:bg-gray-600 text-gray-100 font-semibold py-2 px-2 sm:px-4 rounded-sm transition duration-200 mr-2 shadow-md flex items-center gap-1 sm:gap-2"
+        className="bg-gray-700 hover:bg-gray-600 text-gray-100 font-semibold py-2 px-2 sm:px-4 rounded-sm transition duration-200 shadow-md flex items-center gap-1 sm:gap-2"
       >
         <IconHome size={18} stroke={2} />
         <span className="hidden sm:inline">ユニット選択に戻る</span>
@@ -35,17 +37,30 @@ const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick
           {index + 1} / {total}
         </div>
       </div>
+      <div className="ml-auto flex gap-2">
+        <button
+          onClick={onShuffle}
+          className={`flex items-center gap-1 font-semibold py-1 sm:py-2 px-2 sm:px-3 rounded-sm transition duration-200 shadow-md text-sm ${
+            isRandom 
+              ? 'bg-pink-600 hover:bg-pink-700 text-white' 
+              : 'bg-gray-600 hover:bg-gray-500 text-gray-200'
+          }`}
+        >
+          <IconArrowsShuffle size={16} stroke={2} />
+          <span className="hidden sm:inline">シャッフル{isRandom ? ' ON' : ' OFF'}</span>
+        </button>
       <button
-        onClick={onShuffle}
-        className={`ml-auto flex items-center gap-1 font-semibold py-1 sm:py-2 px-2 sm:px-3 rounded-sm transition duration-200 shadow-md text-sm ${
-          isRandom 
-            ? 'bg-pink-600 hover:bg-pink-700 text-white' 
+        onClick={onToggleAutoPlay}
+        className={`flex items-center gap-1 font-semibold py-1 sm:py-2 px-2 sm:px-3 rounded-sm transition duration-200 shadow-md text-sm ${
+          isAutoPlay 
+            ? 'bg-green-600 hover:bg-green-700 text-white' 
             : 'bg-gray-600 hover:bg-gray-500 text-gray-200'
         }`}
       >
-        <IconArrowsShuffle size={16} stroke={2} />
-        <span className="hidden sm:inline">シャッフル{isRandom ? ' ON' : ' OFF'}</span>
+        {isAutoPlay ? <IconPlayerPause size={16} stroke={2} /> : <IconPlayerPlay size={16} stroke={2} />}
+        <span className="hidden sm:inline">自動再生{isAutoPlay ? ' ON' : ' OFF'}</span>
       </button>
+      </div>
     </div>
     <div className="bg-gray-800 rounded-sm shadow-2xl p-8 cursor-pointer hover:shadow-3xl transition duration-200 min-h-100 flex flex-col justify-center items-center select-none relative overflow-hidden">
       <div

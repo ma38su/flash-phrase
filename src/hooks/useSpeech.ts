@@ -2,9 +2,13 @@ import { useCallback } from 'react';
 import { SPEECH_CONFIG, type Language } from '../constants';
 
 export const useSpeech = () => {
-  const speak = useCallback((text: string, language: Language) => {
+  const speak = useCallback((text: string, language: Language, onEnd?: () => void) => {
     if ('speechSynthesis' in window) {
       const synth = window.speechSynthesis;
+      
+      // 既存の音声合成をキャンセル
+      synth.cancel();
+      
       const voices = synth.getVoices();
       
       const config = SPEECH_CONFIG[language];
@@ -19,7 +23,15 @@ export const useSpeech = () => {
       const utter = new window.SpeechSynthesisUtterance(text);
       utter.lang = config.language;
       utter.voice = preferred || fallback || voices[0];
+      
+      if (onEnd) {
+        utter.onend = onEnd;
+      }
+      
       synth.speak(utter);
+    } else if (onEnd) {
+      // 音声合成が利用できない場合もコールバックを呼ぶ
+      onEnd();
     }
   }, []);
 

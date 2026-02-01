@@ -27,3 +27,11 @@ export const SPEECH_CONFIG: Record<Language, { language: string; preferredVoices
     preferredVoices: /Google|Microsoft|Apple|Kyoko|Otoya/i,
   },
 } as const;
+
+// 自動再生モードの設定
+export const AUTO_PLAY_CONFIG = {
+  // 最初の読み上げ完了後、答えを表示するまでの待機時間（ミリ秒）
+  DELAY_BEFORE_ANSWER: 5000,
+  // 答えの読み上げ完了後、次のフレーズに移動するまでの待機時間（ミリ秒）
+  DELAY_BEFORE_NEXT: 3000,
+} as const;
