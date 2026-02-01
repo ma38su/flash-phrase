@@ -15,14 +15,14 @@ import { shufflePhrases, filterPhrasesByUnit, getUnitLabel } from './utils/phras
 
 function App() {
   const { units, loadUnit, isUnitLoading, getLoadedUnit } = useCSVLoader();
-  const [phrases, setPhrases] = useState<Phrase[]>([]);
+  const [originalPhrases, setOriginalPhrases] = useState<Phrase[]>([]);
   const [loading, setLoading] = useState(false);
   const { settings, updateSettings, resetSettings } = useSettings();
   const { speak, cancelSpeech } = useSpeech(settings);
   const { englishVoices, japaneseVoices } = useVoices();
   
   const [selectedUnit, setSelectedUnit] = useState<SelectedUnit>(null)
-  const [currentPhrases, setCurrentPhrases] = useState<Phrase[]>([])
+  const [displayPhrases, setDisplayPhrases] = useState<Phrase[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showEnglish, setShowEnglish] = useState(false)
   const [isRandom, setIsRandom] = useState(false)
@@ -209,8 +209,8 @@ function App() {
       const orderedPhrases = isRandom 
         ? shufflePhrases(allPhrases)
         : allPhrases;
-      setCurrentPhrases(orderedPhrases);
-      setPhrases(allPhrases); // 後続の処理のためにphrasesも更新
+      setDisplayPhrases(orderedPhrases);
+      setOriginalPhrases(allPhrases); // シャッフル前の元データを保持
     } catch (error) {
       console.error(`Failed to load unit data:`, error);
     } finally {
@@ -244,11 +244,11 @@ function App() {
     
     // すでにユニット選択済みの場合は再シャッフル
     if (selectedUnit) {
-      const unitPhrases = filterPhrasesByUnit(phrases, selectedUnit);
+      const unitPhrases = filterPhrasesByUnit(originalPhrases, selectedUnit);
       const orderedPhrases = newRandomMode
         ? shufflePhrases(unitPhrases)
         : unitPhrases;
-      setCurrentPhrases(orderedPhrases);
+      setDisplayPhrases(orderedPhrases);
       setCurrentIndex(0);
       setShowEnglish(false);
     }
@@ -261,7 +261,7 @@ function App() {
       setShowEnglish(true)
     } else {
       // 次のフレーズへ
-      if (currentIndex < currentPhrases.length - 1) {
+      if (currentIndex < displayPhrases.length - 1) {
         setCurrentIndex(currentIndex + 1)
         setShowEnglish(false)
       } else {
@@ -293,7 +293,7 @@ function App() {
     // 自動再生が無効化されていたら停止
     if (!autoPlayActiveRef.current) return;
     
-    const phrase = currentPhrases[phraseIndex];
+    const phrase = displayPhrases[phraseIndex];
     if (!phrase) {
       // フレーズがない = 終了
       setIsAutoPlay(false);
@@ -336,7 +336,7 @@ function App() {
             if (!autoPlayActiveRef.current) return;
             
             const nextIndex = currentIndexRef.current + 1;
-            if (nextIndex < currentPhrases.length) {
+            if (nextIndex < displayPhrases.length) {
               runAutoPlaySequence(nextIndex);
             } else {
               // 最後のフレーズなので終了
@@ -350,9 +350,7 @@ function App() {
         });
       }, settingsRef.current.delayBeforeAnswer);
     });
-  }, [currentPhrases, reverseMode, speak]);
-
-  // isAutoPlayがtrueになったら自動再生シーケンスを開始
+  }, [displayPhrases, reverseMode, speak]);
   useEffect(() => {
     if (isAutoPlay && selectedUnit !== null && showUnitList === null && !autoPlayActiveRef.current) {
       autoPlayActiveRef.current = true;
@@ -494,7 +492,7 @@ function App() {
   }
 
   // フレーズ表示画面
-  const currentPhrase = currentPhrases[currentIndex]
+  const currentPhrase = displayPhrases[currentIndex]
   
   return (
     <PageContainer maxWidth="xl">
@@ -511,7 +509,7 @@ function App() {
             setShowEnglish(false);
           }
         }}
-        total={currentPhrases.length}
+        total={displayPhrases.length}
         index={currentIndex}
         unitLabel={getUnitLabel(selectedUnit)}
         onBack={() => setSelectedUnit(null)}
