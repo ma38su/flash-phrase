@@ -4,6 +4,7 @@ import UnitSelect from './components/UnitSelect'
 import PhraseCard from './components/PhraseCard'
 import UnitList from './components/UnitList'
 import UnitListHeader from './components/UnitListHeader'
+import PageContainer from './components/PageContainer'
 import type { Phrase, SelectedUnit } from './types'
 import { useCSVLoader } from './hooks/useCSVLoader'
 import { useSpeech } from './hooks/useSpeech'
@@ -324,42 +325,39 @@ function App() {
   // ユニット選択前画面
   if (!selectedUnit && showUnitList === null) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-700 p-4 sm:p-8">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-center mb-6 sm:mb-8 text-gray-100 tracking-wide drop-shadow-lg">Quick Response</h1>
-          <div className="bg-gray-800 rounded-sm shadow-2xl p-4 sm:p-8">
-            {loading ? (
-              <div className="text-center py-8 sm:py-12">
-                <div className="animate-spin rounded-full h-10 sm:h-12 w-10 sm:w-12 border-b-2 border-gray-400 mx-auto"></div>
-                <p className="mt-3 sm:mt-4 text-gray-400 text-sm sm:text-base">読み込み中...</p>
+      <PageContainer maxWidth="3xl" showTitle>
+        <div className="bg-gray-800 rounded-sm shadow-2xl p-4 sm:p-8">
+          {loading ? (
+            <div className="text-center py-8 sm:py-12">
+              <div className="animate-spin rounded-full h-10 sm:h-12 w-10 sm:w-12 border-b-2 border-gray-400 mx-auto"></div>
+              <p className="mt-3 sm:mt-4 text-gray-400 text-sm sm:text-base">読み込み中...</p>
+            </div>
+          ) : (
+            <>
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-200 text-center">ユニットを選択してください</h2>
+              <div className="mb-4 sm:mb-6 flex items-center justify-center">
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isRandom}
+                    onChange={toggleRandomMode}
+                    className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400 bg-gray-700 border-gray-600 rounded focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <span className="ml-2 sm:ml-3 text-base sm:text-lg text-gray-300 font-medium">
+                    🔀 ランダム表示
+                  </span>
+                </label>
               </div>
-            ) : (
-              <>
-                <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-200 text-center">ユニットを選択してください</h2>
-                <div className="mb-4 sm:mb-6 flex items-center justify-center">
-                  <label className="flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isRandom}
-                      onChange={toggleRandomMode}
-                      className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400 bg-gray-700 border-gray-600 rounded focus:ring-2 focus:ring-indigo-500"
-                    />
-                    <span className="ml-2 sm:ml-3 text-base sm:text-lg text-gray-300 font-medium">
-                      🔀 ランダム表示
-                    </span>
-                  </label>
-                </div>
-                <UnitSelect
-                  units={units}
-                  onSelectUnit={(unit: number) => { setReverseMode(false); handleSelectUnit(unit); }}
-                  onSelectReverseUnit={(unit: number) => { setReverseMode(true); handleSelectUnit(unit); }}
-                  onShowUnitList={handleShowUnitList}
-                />
-              </>
-            )}
-          </div>
+              <UnitSelect
+                units={units}
+                onSelectUnit={(unit: number) => { setReverseMode(false); handleSelectUnit(unit); }}
+                onSelectReverseUnit={(unit: number) => { setReverseMode(true); handleSelectUnit(unit); }}
+                onShowUnitList={handleShowUnitList}
+              />
+            </>
+          )}
         </div>
-      </div>
+      </PageContainer>
     )
   }
 
@@ -387,33 +385,31 @@ function App() {
     };
     
     return (
-      <div className="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-700 p-4 sm:p-8">
-        <div className="max-w-2xl mx-auto">
-          <UnitListHeader
-            unit={showUnitList}
-            onBack={() => setShowUnitList(null)}
-            onPrev={() => handleUnitNavigation('prev')}
-            onNext={() => handleUnitNavigation('next')}
-            disablePrev={currentUnitIndex <= 0}
-            disableNext={currentUnitIndex >= units.length - 1}
-          />
-          <UnitList
-            phrases={unitPhrases}
-            showEN={showListEN}
-            showJA={showListJA}
-            onToggleEN={() => setShowListEN(v => !v)}
-            onToggleJA={() => setShowListJA(v => !v)}
-            onSpeak={(text) => speak(text, 'en')}
-            onSpeakJapanese={(text) => speak(text, 'ja')}
-            unit={showUnitList}
-            units={units}
-            onPrev={() => handleUnitNavigation('prev')}
-            onNext={() => handleUnitNavigation('next')}
-            disablePrev={currentUnitIndex <= 0}
-            disableNext={currentUnitIndex >= units.length - 1}
-          />
-        </div>
-      </div>
+      <PageContainer maxWidth="2xl">
+        <UnitListHeader
+          unit={showUnitList}
+          onBack={() => setShowUnitList(null)}
+          onPrev={() => handleUnitNavigation('prev')}
+          onNext={() => handleUnitNavigation('next')}
+          disablePrev={currentUnitIndex <= 0}
+          disableNext={currentUnitIndex >= units.length - 1}
+        />
+        <UnitList
+          phrases={unitPhrases}
+          showEN={showListEN}
+          showJA={showListJA}
+          onToggleEN={() => setShowListEN(v => !v)}
+          onToggleJA={() => setShowListJA(v => !v)}
+          onSpeak={(text) => speak(text, 'en')}
+          onSpeakJapanese={(text) => speak(text, 'ja')}
+          unit={showUnitList}
+          units={units}
+          onPrev={() => handleUnitNavigation('prev')}
+          onNext={() => handleUnitNavigation('next')}
+          disablePrev={currentUnitIndex <= 0}
+          disableNext={currentUnitIndex >= units.length - 1}
+        />
+      </PageContainer>
     )
   }
 
@@ -421,34 +417,32 @@ function App() {
   const currentPhrase = currentPhrases[currentIndex]
   
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-700 p-4 sm:p-8">
-      <div className="max-w-xl mx-auto">
-        <PhraseCard
-          phrase={currentPhrase}
-          showEnglish={showEnglish}
-          reverseMode={reverseMode}
-          onClick={handleClick}
-          onSpeak={(text) => speak(text, 'en')}
-          onSpeakJapanese={(text) => speak(text, 'ja')}
-          onPrev={() => {
-            if (currentIndex > 0) {
-              setCurrentIndex(currentIndex - 1);
-              setShowEnglish(false);
-            }
-          }}
-          total={currentPhrases.length}
-          index={currentIndex}
-          unitLabel={getUnitLabel(selectedUnit)}
-          onBack={() => setSelectedUnit(null)}
-          onShuffle={() => {
-            toggleRandomMode();
-          }}
-          isRandom={isRandom}
-          isAutoPlay={isAutoPlay}
-          onToggleAutoPlay={toggleAutoPlay}
-        />
-      </div>
-    </div>
+    <PageContainer maxWidth="xl">
+      <PhraseCard
+        phrase={currentPhrase}
+        showEnglish={showEnglish}
+        reverseMode={reverseMode}
+        onClick={handleClick}
+        onSpeak={(text) => speak(text, 'en')}
+        onSpeakJapanese={(text) => speak(text, 'ja')}
+        onPrev={() => {
+          if (currentIndex > 0) {
+            setCurrentIndex(currentIndex - 1);
+            setShowEnglish(false);
+          }
+        }}
+        total={currentPhrases.length}
+        index={currentIndex}
+        unitLabel={getUnitLabel(selectedUnit)}
+        onBack={() => setSelectedUnit(null)}
+        onShuffle={() => {
+          toggleRandomMode();
+        }}
+        isRandom={isRandom}
+        isAutoPlay={isAutoPlay}
+        onToggleAutoPlay={toggleAutoPlay}
+      />
+    </PageContainer>
   )
 }
 
