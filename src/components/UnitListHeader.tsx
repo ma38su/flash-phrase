@@ -17,7 +17,6 @@ const UnitListHeader: React.FC<Props> = ({ unit, onBack, onPrev, onNext, disable
       className="bg-gray-700 hover:bg-gray-600 text-gray-100 font-semibold py-2 px-2 sm:px-4 rounded-sm transition duration-200 mr-2 shadow-md flex items-center gap-1 sm:gap-2"
     >
       <IconHome size={18} stroke={2} />
-      <span className="hidden sm:inline">ユニット選択に戻る</span>
     </button>
     <h2 className="text-2xl font-bold text-gray-100">Unit {unit} 一覧</h2>
     <div className="flex gap-2 ml-auto">

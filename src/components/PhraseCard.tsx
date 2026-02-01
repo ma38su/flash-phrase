@@ -29,7 +29,6 @@ const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick
         className="bg-gray-700 hover:bg-gray-600 text-gray-100 font-semibold py-2 px-2 sm:px-4 rounded-sm transition duration-200 shadow-md flex items-center gap-1 sm:gap-2"
       >
         <IconHome size={18} stroke={2} />
-        <span className="hidden sm:inline">ユニット選択に戻る</span>
       </button>
       <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
         <h2 className="text-2xl font-bold text-gray-100">{unitLabel}</h2>
@@ -47,7 +46,6 @@ const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick
           }`}
         >
           <IconArrowsShuffle size={16} stroke={2} />
-          <span className="hidden sm:inline">シャッフル{isRandom ? ' ON' : ' OFF'}</span>
         </button>
       <button
         onClick={onToggleAutoSpeak}
@@ -58,7 +56,6 @@ const PhraseCard: React.FC<Props> = ({ phrase, showEnglish, reverseMode, onClick
         }`}
       >
         {isAutoSpeak ? <IconVolume size={16} stroke={2} /> : <IconVolumeOff size={16} stroke={2} />}
-        <span className="hidden sm:inline">自動読み上げ{isAutoSpeak ? ' ON' : ' OFF'}</span>
       </button>
       </div>
     </div>
