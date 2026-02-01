@@ -17,14 +17,16 @@ export const UNIT_FILES: UnitFile[] = [
 // 音声合成の設定
 export type Language = 'en' | 'ja';
 
-export const SPEECH_CONFIG: Record<Language, { language: string; preferredVoices: RegExp }> = {
+export const SPEECH_CONFIG: Record<Language, { language: string; preferredVoices: RegExp; rate: number }> = {
   en: {
     language: 'en-US',
     preferredVoices: /Google|Microsoft|Apple|Samantha|Daniel|Karen|Moira|Fiona/i,
+    rate: 1.0, // 速度: 0.1～10　1が標準
   },
   ja: {
     language: 'ja-JP',
     preferredVoices: /Google|Microsoft|Apple|Kyoko|Otoya/i,
+    rate: 1.2, // 日本語は少し速め
   },
 } as const;
 

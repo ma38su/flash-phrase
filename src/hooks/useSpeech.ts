@@ -39,6 +39,7 @@ export const useSpeech = () => {
         const utter = new window.SpeechSynthesisUtterance(text);
         utter.lang = config.language;
         utter.voice = preferred || fallback || voices[0];
+        utter.rate = config.rate;
         
         if (onEnd) {
           utter.onend = onEnd;
