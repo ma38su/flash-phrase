@@ -1,27 +1,27 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import Papa from 'papaparse';
 import type { Phrase } from '../types';
 import { UNIT_FILES } from '../constants';
 
 export const useCSVLoader = () => {
-  const [loadedUnits, setLoadedUnits] = useState<Map<number, Phrase[]>>(new Map());
-  const [loadingUnits, setLoadingUnits] = useState<Set<number>>(new Set());
+  const loadedUnitsRef = useRef<Map<number, Phrase[]>>(new Map());
+  const loadingUnitsRef = useRef<Set<number>>(new Set());
 
   // 利用可能なユニット番号のリスト（定数から取得）
   const units = UNIT_FILES.map(file => file.unitNumber).sort((a, b) => a - b);
 
   const loadUnit = useCallback(async (unitNumber: number): Promise<Phrase[]> => {
     // すでに読み込み済みの場合はキャッシュから返す
-    if (loadedUnits.has(unitNumber)) {
-      return loadedUnits.get(unitNumber)!;
+    if (loadedUnitsRef.current.has(unitNumber)) {
+      return loadedUnitsRef.current.get(unitNumber)!;
     }
 
     // すでに読み込み中の場合は待機
-    if (loadingUnits.has(unitNumber)) {
+    if (loadingUnitsRef.current.has(unitNumber)) {
       return new Promise((resolve) => {
         const checkLoaded = () => {
-          if (loadedUnits.has(unitNumber)) {
-            resolve(loadedUnits.get(unitNumber)!);
+          if (loadedUnitsRef.current.has(unitNumber)) {
+            resolve(loadedUnitsRef.current.get(unitNumber)!);
           } else {
             setTimeout(checkLoaded, 50);
           }
@@ -35,7 +35,7 @@ export const useCSVLoader = () => {
       throw new Error(`Unit ${unitNumber} not found`);
     }
 
-    setLoadingUnits(prev => new Set(prev).add(unitNumber));
+    loadingUnitsRef.current.add(unitNumber);
 
     try {
       const response = await fetch(unitFile.filepath);
@@ -58,32 +58,24 @@ export const useCSVLoader = () => {
         });
       });
 
-      setLoadedUnits(prev => new Map(prev).set(unitNumber, phrases));
-      setLoadingUnits(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(unitNumber);
-        return newSet;
-      });
+      loadedUnitsRef.current.set(unitNumber, phrases);
+      loadingUnitsRef.current.delete(unitNumber);
 
       return phrases;
     } catch (error) {
       console.error(`Failed to load unit ${unitNumber}:`, error);
-      setLoadingUnits(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(unitNumber);
-        return newSet;
-      });
+      loadingUnitsRef.current.delete(unitNumber);
       throw error;
     }
-  }, [loadedUnits, loadingUnits]);
+  }, []);
 
   const isUnitLoading = useCallback((unitNumber: number) => {
-    return loadingUnits.has(unitNumber);
-  }, [loadingUnits]);
+    return loadingUnitsRef.current.has(unitNumber);
+  }, []);
 
   const getLoadedUnit = useCallback((unitNumber: number) => {
-    return loadedUnits.get(unitNumber) || [];
-  }, [loadedUnits]);
+    return loadedUnitsRef.current.get(unitNumber) || [];
+  }, []);
 
   return { units, loadUnit, isUnitLoading, getLoadedUnit };
 };
