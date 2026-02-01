@@ -17,6 +17,9 @@ interface UseAutoPlayProps {
   setSelectedUnit: (unit: number | 'all' | null) => void;
 }
 
+// 自動再生のステップ
+type AutoPlayStep = 'question' | 'answer';
+
 export const useAutoPlay = ({
   displayPhrases,
   currentIndex,
@@ -33,6 +36,7 @@ export const useAutoPlay = ({
   const autoPlayTimerRef = useRef<NodeJS.Timeout | null>(null);
   const autoPlayActiveRef = useRef(false);
   const currentIndexRef = useRef(currentIndex);
+  const currentStepRef = useRef<AutoPlayStep>('question'); // 現在のステップを追跡
   const settingsRef = useRef(settings);
 
   // settingsの変更を追跡
@@ -49,6 +53,41 @@ export const useAutoPlay = ({
     }
     cancelSpeech();
   }, [cancelSpeech]);
+
+  // 答えを表示して読み上げる（Step 2-3）
+  const showAnswerAndSpeak = useCallback((phraseIndex: number) => {
+    if (!autoPlayActiveRef.current) return;
+    
+    const phrase = displayPhrases[phraseIndex];
+    if (!phrase) return;
+
+    currentStepRef.current = 'answer';
+    setCurrentIndex(phraseIndex);
+    setShowEnglish(true);
+    
+    const secondLang: Language = reverseMode ? 'ja' : 'en';
+    const secondText = reverseMode ? phrase.JA : phrase.EN;
+    
+    speak(secondText, secondLang, () => {
+      if (!autoPlayActiveRef.current) return;
+      
+      // 遅延後に次のフレーズへ
+      autoPlayTimerRef.current = setTimeout(() => {
+        if (!autoPlayActiveRef.current) return;
+        
+        const nextIndex = currentIndexRef.current + 1;
+        if (nextIndex < displayPhrases.length) {
+          runAutoPlaySequence(nextIndex);
+        } else {
+          // 最後のフレーズなので終了
+          setSelectedUnit(null);
+          setCurrentIndex(0);
+          setShowEnglish(false);
+          autoPlayActiveRef.current = false;
+        }
+      }, settingsRef.current.delayBeforeNext);
+    });
+  }, [displayPhrases, reverseMode, speak, setCurrentIndex, setShowEnglish, setSelectedUnit]);
 
   // 1つのフレーズの自動再生シーケンスを実行
   const runAutoPlaySequence = useCallback((phraseIndex: number) => {
@@ -67,6 +106,7 @@ export const useAutoPlay = ({
 
     // 現在のインデックスを更新（stateとrefの両方）
     currentIndexRef.current = phraseIndex;
+    currentStepRef.current = 'question';
     setCurrentIndex(phraseIndex);
     setShowEnglish(false);
 
@@ -79,38 +119,10 @@ export const useAutoPlay = ({
       
       // Step 2: 遅延後に答えを表示
       autoPlayTimerRef.current = setTimeout(() => {
-        if (!autoPlayActiveRef.current) return;
-        
-        // 現在のインデックスを再確認して状態を更新
-        setCurrentIndex(currentIndexRef.current);
-        setShowEnglish(true);
-        
-        // Step 3: 答えの言語を読み上げ
-        const secondLang: Language = reverseMode ? 'ja' : 'en';
-        const secondText = reverseMode ? phrase.JA : phrase.EN;
-        
-        speak(secondText, secondLang, () => {
-          if (!autoPlayActiveRef.current) return;
-          
-          // Step 4: 遅延後に次のフレーズへ
-          autoPlayTimerRef.current = setTimeout(() => {
-            if (!autoPlayActiveRef.current) return;
-            
-            const nextIndex = currentIndexRef.current + 1;
-            if (nextIndex < displayPhrases.length) {
-              runAutoPlaySequence(nextIndex);
-            } else {
-              // 最後のフレーズなので終了
-              setSelectedUnit(null);
-              setCurrentIndex(0);
-              setShowEnglish(false);
-              autoPlayActiveRef.current = false;
-            }
-          }, settingsRef.current.delayBeforeNext);
-        });
+        showAnswerAndSpeak(currentIndexRef.current);
       }, settingsRef.current.delayBeforeAnswer);
     });
-  }, [displayPhrases, reverseMode, speak, setCurrentIndex, setShowEnglish, setSelectedUnit]);
+  }, [displayPhrases, reverseMode, speak, setCurrentIndex, setShowEnglish, setSelectedUnit, showAnswerAndSpeak]);
 
   // 自動再生を開始する関数
   const startAutoPlay = useCallback((startIndex: number) => {
@@ -118,6 +130,35 @@ export const useAutoPlay = ({
     autoPlayActiveRef.current = true;
     runAutoPlaySequence(startIndex);
   }, [runAutoPlaySequence]);
+
+  // 強制的に次のステップにスキップする関数
+  const skipToNext = useCallback(() => {
+    if (!autoPlayActiveRef.current) return;
+    
+    // タイマーと音声をキャンセル
+    if (autoPlayTimerRef.current) {
+      clearTimeout(autoPlayTimerRef.current);
+      autoPlayTimerRef.current = null;
+    }
+    cancelSpeech();
+
+    if (currentStepRef.current === 'question') {
+      // 問題表示中 → 答えを表示
+      showAnswerAndSpeak(currentIndexRef.current);
+    } else {
+      // 答え表示中 → 次のフレーズへ
+      const nextIndex = currentIndexRef.current + 1;
+      if (nextIndex < displayPhrases.length) {
+        runAutoPlaySequence(nextIndex);
+      } else {
+        // 最後のフレーズなので終了
+        setSelectedUnit(null);
+        setCurrentIndex(0);
+        setShowEnglish(false);
+        autoPlayActiveRef.current = false;
+      }
+    }
+  }, [displayPhrases.length, cancelSpeech, showAnswerAndSpeak, runAutoPlaySequence, setSelectedUnit, setCurrentIndex, setShowEnglish]);
 
   // 画面を離れたら自動再生を停止
   useEffect(() => {
@@ -136,6 +177,7 @@ export const useAutoPlay = ({
   return {
     startAutoPlay,
     stopAutoPlay,
-    autoPlayActiveRef, // URL更新スキップ用に公開
+    skipToNext,
+    autoPlayActiveRef,
   };
 };

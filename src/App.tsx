@@ -46,7 +46,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
 
   // 自動再生フック
-  const { startAutoPlay, stopAutoPlay, autoPlayActiveRef } = useAutoPlay({
+  const { startAutoPlay, stopAutoPlay, skipToNext, autoPlayActiveRef } = useAutoPlay({
     displayPhrases,
     currentIndex,
     selectedUnit,
@@ -61,7 +61,7 @@ function App() {
   });
 
   // URL管理フック
-  const { parseURL } = useURLManager({
+  const { parseURL, skipNextHashChangeRef } = useURLManager({
     loading,
     selectedUnit,
     showUnitList,
@@ -113,6 +113,11 @@ function App() {
   // ブラウザの戻る/進むボタンとハッシュ変更に対応
   useEffect(() => {
     const handleHashChange = () => {
+      // プログラムからのURL更新の場合はスキップ
+      if (skipNextHashChangeRef.current) {
+        skipNextHashChangeRef.current = false;
+        return;
+      }
       // 自動再生中はハッシュ変更による状態復元をスキップ
       if (autoPlayActiveRef.current) return;
       restoreStateFromURL();
@@ -120,7 +125,7 @@ function App() {
     
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [restoreStateFromURL]);
+  }, [restoreStateFromURL, skipNextHashChangeRef]);
 
   // ユニット選択時
   const handleSelectUnit = async (unit: SelectedUnit) => {
@@ -192,6 +197,15 @@ function App() {
 
   // クリックで英訳表示/次のフレーズへ
   const handleClick = () => {
+    // 自動再生中は強制的に次のステップにスキップ
+    if (autoPlayActiveRef.current) {
+      skipToNext();
+      return;
+    }
+    
+    // 手動モード：表示切り替え時に再生中の音声をキャンセル
+    cancelSpeech();
+    
     if (!showEnglish) {
       // 英訳を表示
       setShowEnglish(true)
@@ -368,6 +382,7 @@ function App() {
         onSpeakJapanese={(text) => speak(text, 'ja')}
         onPrev={() => {
           if (currentIndex > 0) {
+            cancelSpeech();
             setCurrentIndex(currentIndex - 1);
             setShowEnglish(false);
           }

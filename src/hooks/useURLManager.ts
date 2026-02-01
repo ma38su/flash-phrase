@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import type { SelectedUnit } from '../types';
 
 interface URLParams {
@@ -42,6 +42,9 @@ export const useURLManager = ({
   autoPlayActiveRef,
 }: UseURLManagerProps) => {
   
+  // プログラムからのURL更新時にhashchangeをスキップするためのフラグ
+  const skipNextHashChangeRef = useRef(false);
+  
   // URLを更新する関数
   const updateURL = useCallback((path: string, params: URLParams = {}) => {
     let hash = '#' + path;
@@ -55,6 +58,8 @@ export const useURLManager = ({
       hash += '?' + queryParams.toString();
     }
     
+    // プログラムからのURL更新なのでhashchangeをスキップ
+    skipNextHashChangeRef.current = true;
     window.location.hash = hash;
   }, []);
 
@@ -147,5 +152,5 @@ export const useURLManager = ({
     updateURL(`/unit${showUnitList}/list`, params);
   }, [showUnitList, showListEN, showListJA, loading, updateURL]);
 
-  return { parseURL, updateURL };
+  return { parseURL, updateURL, skipNextHashChangeRef };
 };
