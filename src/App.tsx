@@ -15,7 +15,7 @@ function App() {
   const { units, loadUnit, isUnitLoading, getLoadedUnit } = useCSVLoader();
   const [phrases, setPhrases] = useState<Phrase[]>([]);
   const [loading, setLoading] = useState(false);
-  const { speak } = useSpeech();
+  const { speak, cancelSpeech } = useSpeech();
   
   const [selectedUnit, setSelectedUnit] = useState<SelectedUnit>(null)
   const [currentPhrases, setCurrentPhrases] = useState<Phrase[]>([])
@@ -36,6 +36,8 @@ function App() {
   // 自動再生モードの状態
   const [isAutoPlay, setIsAutoPlay] = useState(false);
   const autoPlayTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoPlayActiveRef = useRef(false); // 自動再生シーケンスが進行中かどうか
+  const currentIndexRef = useRef(0); // 自動再生用の現在インデックス
 
   // URLから状態を復元する関数（動的読み込み対応）
   const restoreStateFromURL = async () => {
@@ -122,6 +124,8 @@ function App() {
   // ブラウザの戻る/進むボタンとハッシュ変更に対応
   useEffect(() => {
     const handleHashChange = () => {
+      // 自動再生中はハッシュ変更による状態復元をスキップ
+      if (autoPlayActiveRef.current) return;
       restoreStateFromURL();
     };
     
@@ -140,7 +144,8 @@ function App() {
 
   // フレーズ表示状態変更時にURLを更新
   useEffect(() => {
-    if (loading || selectedUnit === null || showUnitList !== null) return;
+    // 自動再生中はURL更新をスキップ（頻繁な更新を避ける）
+    if (loading || selectedUnit === null || showUnitList !== null || autoPlayActiveRef.current) return;
     
     const unitPath = selectedUnit === 'all' ? '/all' : `/unit${selectedUnit}`;
     const mode = reverseMode ? '/en-ja' : '/ja-en';
@@ -260,66 +265,97 @@ function App() {
     setIsAutoPlay(prev => !prev);
   }, []);
 
-  // 自動再生モードのロジック
-  useEffect(() => {
-    if (!isAutoPlay || !selectedUnit || showUnitList !== null) {
-      // タイマーと音声をクリア
-      if (autoPlayTimerRef.current) {
-        clearTimeout(autoPlayTimerRef.current);
-        autoPlayTimerRef.current = null;
-      }
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
+  // 自動再生を停止する関数
+  const stopAutoPlay = useCallback(() => {
+    autoPlayActiveRef.current = false;
+    if (autoPlayTimerRef.current) {
+      clearTimeout(autoPlayTimerRef.current);
+      autoPlayTimerRef.current = null;
+    }
+    cancelSpeech();
+  }, [cancelSpeech]);
+
+  // 1つのフレーズの自動再生シーケンスを実行
+  const runAutoPlaySequence = useCallback((phraseIndex: number) => {
+    // 自動再生が無効化されていたら停止
+    if (!autoPlayActiveRef.current) return;
+    
+    const phrase = currentPhrases[phraseIndex];
+    if (!phrase) {
+      // フレーズがない = 終了
+      setIsAutoPlay(false);
+      setSelectedUnit(null);
+      setCurrentIndex(0);
+      setShowEnglish(false);
+      autoPlayActiveRef.current = false;
       return;
     }
 
-    const currentPhrase = currentPhrases[currentIndex];
-    if (!currentPhrase) return;
+    // 現在のインデックスを更新（stateとrefの両方）
+    currentIndexRef.current = phraseIndex;
+    setCurrentIndex(phraseIndex);
+    setShowEnglish(false);
 
-    // クリーンアップ関数
-    const cleanup = () => {
-      if (autoPlayTimerRef.current) {
-        clearTimeout(autoPlayTimerRef.current);
-        autoPlayTimerRef.current = null;
-      }
-    };
+    // Step 1: 最初の言語を読み上げ
+    const firstLang = reverseMode ? 'en' : 'ja';
+    const firstText = reverseMode ? phrase.EN : phrase.JA;
 
-    // 最初の言語を読み上げ
-    if (!showEnglish) {
-      const firstLang = reverseMode ? 'en' : 'ja';
-      const firstText = reverseMode ? currentPhrase.EN : currentPhrase.JA;
+    speak(firstText, firstLang, () => {
+      if (!autoPlayActiveRef.current) return;
       
-      speak(firstText, firstLang, () => {
-        // 読み上げ完了後、一定時間待ってから答えを表示
-        autoPlayTimerRef.current = setTimeout(() => {
-          setShowEnglish(true);
-        }, AUTO_PLAY_CONFIG.DELAY_BEFORE_ANSWER);
-      });
-    } else {
-      // 答えの言語を読み上げ
-      const secondLang = reverseMode ? 'ja' : 'en';
-      const secondText = reverseMode ? currentPhrase.JA : currentPhrase.EN;
-      
-      speak(secondText, secondLang, () => {
-        // 読み上げ完了後、一定時間待ってから次へ
-        autoPlayTimerRef.current = setTimeout(() => {
-          if (currentIndex < currentPhrases.length - 1) {
-            setCurrentIndex(prev => prev + 1);
-            setShowEnglish(false);
-          } else {
-            // 最後のフレーズなので自動再生を停止
-            setIsAutoPlay(false);
-            setSelectedUnit(null);
-            setCurrentIndex(0);
-            setShowEnglish(false);
-          }
-        }, AUTO_PLAY_CONFIG.DELAY_BEFORE_NEXT);
-      });
+      // Step 2: 遅延後に答えを表示
+      autoPlayTimerRef.current = setTimeout(() => {
+        if (!autoPlayActiveRef.current) return;
+        
+        // 現在のインデックスを再確認して状態を更新
+        setCurrentIndex(currentIndexRef.current);
+        setShowEnglish(true);
+        
+        // Step 3: 答えの言語を読み上げ
+        const secondLang = reverseMode ? 'ja' : 'en';
+        const secondText = reverseMode ? phrase.JA : phrase.EN;
+        
+        speak(secondText, secondLang, () => {
+          if (!autoPlayActiveRef.current) return;
+          
+          // Step 4: 遅延後に次のフレーズへ
+          autoPlayTimerRef.current = setTimeout(() => {
+            if (!autoPlayActiveRef.current) return;
+            
+            const nextIndex = currentIndexRef.current + 1;
+            if (nextIndex < currentPhrases.length) {
+              runAutoPlaySequence(nextIndex);
+            } else {
+              // 最後のフレーズなので終了
+              setIsAutoPlay(false);
+              setSelectedUnit(null);
+              setCurrentIndex(0);
+              setShowEnglish(false);
+              autoPlayActiveRef.current = false;
+            }
+          }, AUTO_PLAY_CONFIG.DELAY_BEFORE_NEXT);
+        });
+      }, AUTO_PLAY_CONFIG.DELAY_BEFORE_ANSWER);
+    });
+  }, [currentPhrases, reverseMode, speak]);
+
+  // isAutoPlayがtrueになったら自動再生シーケンスを開始
+  useEffect(() => {
+    if (isAutoPlay && selectedUnit !== null && showUnitList === null && !autoPlayActiveRef.current) {
+      autoPlayActiveRef.current = true;
+      runAutoPlaySequence(currentIndex);
+    } else if (!isAutoPlay) {
+      stopAutoPlay();
     }
+  }, [isAutoPlay]);
 
-    return cleanup;
-  }, [isAutoPlay, selectedUnit, showUnitList, currentIndex, showEnglish, reverseMode, currentPhrases, speak]);
+  // 自動再生中に画面を離れたら停止
+  useEffect(() => {
+    if (selectedUnit === null || showUnitList !== null) {
+      stopAutoPlay();
+      setIsAutoPlay(false);
+    }
+  }, [selectedUnit, showUnitList, stopAutoPlay]);
 
 
   // ユニット選択前画面
