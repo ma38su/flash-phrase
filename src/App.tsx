@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import './App.css'
 import UnitSelect from './components/UnitSelect'
 import PhraseCard from './components/PhraseCard'
@@ -11,6 +11,8 @@ import { useCSVLoader } from './hooks/useCSVLoader'
 import { useSpeech } from './hooks/useSpeech'
 import { useSettings } from './hooks/useSettings'
 import { useVoices } from './hooks/useVoices'
+import { useAutoPlay } from './hooks/useAutoPlay'
+import { useURLManager } from './hooks/useURLManager'
 import { shufflePhrases, filterPhrasesByUnit, getUnitLabel } from './utils/phraseUtils'
 
 function App() {
@@ -39,95 +41,69 @@ function App() {
 
   // 自動再生モードの状態
   const [isAutoPlay, setIsAutoPlay] = useState(false);
-  const autoPlayTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const autoPlayActiveRef = useRef(false); // 自動再生シーケンスが進行中かどうか
-  const currentIndexRef = useRef(0); // 自動再生用の現在インデックス
-  const settingsRef = useRef(settings); // 自動再生用の設定参照
 
   // 設定ページの表示状態
   const [showSettings, setShowSettings] = useState(false);
 
-  // settingsの変更を追跡
-  useEffect(() => {
-    settingsRef.current = settings;
-  }, [settings]);
+  // 自動再生フック
+  const { startAutoPlay, stopAutoPlay, autoPlayActiveRef } = useAutoPlay({
+    displayPhrases,
+    currentIndex,
+    selectedUnit,
+    showUnitList,
+    reverseMode,
+    settings,
+    speak,
+    cancelSpeech,
+    setCurrentIndex,
+    setShowEnglish,
+    setSelectedUnit,
+  });
+
+  // URL管理フック
+  const { parseURL } = useURLManager({
+    loading,
+    selectedUnit,
+    showUnitList,
+    reverseMode,
+    currentIndex,
+    showEnglish,
+    isRandom,
+    showListEN,
+    showListJA,
+    autoPlayActiveRef,
+  });
 
   // URLから状態を復元する関数（動的読み込み対応）
-  const restoreStateFromURL = async () => {
-    const hash = window.location.hash.substring(1); // #を除去
-    const [path, queryString] = hash.split('?');
-    const searchParams = new URLSearchParams(queryString || '');
-    
-    if (!path || path === '/') {
-      // ルートハッシュはユニット選択画面
+  const restoreStateFromURL = useCallback(async () => {
+    const urlState = parseURL();
+    if (!urlState || urlState.type === 'home') {
       return;
     }
 
-    const pathParts = path.split('/').filter(Boolean);
-    
-    if (pathParts.length >= 2) {
-      const unitOrAll = pathParts[0];
-      const mode = pathParts[1];
+    if (urlState.type === 'list' && urlState.unit !== undefined && typeof urlState.unit === 'number') {
+      // 一覧表示の表示設定を復元
+      if (urlState.showListEN !== undefined) setShowListEN(urlState.showListEN);
+      if (urlState.showListJA !== undefined) setShowListJA(urlState.showListJA);
       
+      // データを読み込んでから一覧表示
+      await handleShowUnitList(urlState.unit);
+    } else if (urlState.type === 'phrase' && urlState.unit !== undefined) {
       // ランダムモードの復元
-      const randomParam = searchParams.get('random');
-      if (randomParam === 'true') {
+      if (urlState.isRandom) {
         setIsRandom(true);
       }
       
-      if (mode === 'list' && unitOrAll !== 'all') {
-        // ユニット一覧表示
-        const unitNum = parseInt(unitOrAll.replace('unit', ''));
-        if (!isNaN(unitNum)) {
-          // 一覧表示の表示設定を復元
-          const showEN = searchParams.get('showEN');
-          const showJA = searchParams.get('showJA');
-          if (showEN !== null) setShowListEN(showEN === 'true');
-          if (showJA !== null) setShowListJA(showJA === 'true');
-          
-          // データを読み込んでから一覧表示
-          await handleShowUnitList(unitNum);
-        }
-      } else if (mode === 'ja-en' || mode === 'en-ja') {
-        // フレーズ表示モード
-        const isReverse = mode === 'en-ja';
-        setReverseMode(isReverse);
-        
-        let unit: number | 'all';
-        if (unitOrAll === 'all') {
-          unit = 'all';
-        } else {
-          unit = parseInt(unitOrAll.replace('unit', ''));
-          if (isNaN(unit)) return;
-        }
-        
-        // フレーズの状態を復元
-        const index = parseInt(searchParams.get('index') || '0');
-        const showEnglish = searchParams.get('show') === 'true';
-        
-        // データを読み込んでからフレーズ表示
-        await handleSelectUnit(unit);
-        setCurrentIndex(index);
-        setShowEnglish(showEnglish);
-      }
+      // フレーズ表示モード
+      const isReverse = urlState.mode === 'en-ja';
+      setReverseMode(isReverse);
+      
+      // データを読み込んでからフレーズ表示
+      await handleSelectUnit(urlState.unit);
+      if (urlState.index !== undefined) setCurrentIndex(urlState.index);
+      if (urlState.showEnglish !== undefined) setShowEnglish(urlState.showEnglish);
     }
-  };
-
-  // URLを更新する関数
-  const updateURL = (path: string, params: Record<string, string> = {}) => {
-    let hash = '#' + path;
-    
-    const queryParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) queryParams.set(key, value);
-    });
-    
-    if (queryParams.toString()) {
-      hash += '?' + queryParams.toString();
-    }
-    
-    window.location.hash = hash;
-  };
+  }, [parseURL]);
 
   // 初回読み込み時のURL状態復元
   useEffect(() => {
@@ -144,47 +120,7 @@ function App() {
     
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  // selectedUnit変更時にURLを更新
-  useEffect(() => {
-    if (loading) return;
-    
-    if (selectedUnit === null && showUnitList === null) {
-      updateURL('/');
-    }
-  }, [selectedUnit, showUnitList, loading]);
-
-  // フレーズ表示状態変更時にURLを更新
-  useEffect(() => {
-    // 自動再生中はURL更新をスキップ（頻繁な更新を避ける）
-    if (loading || selectedUnit === null || showUnitList !== null || autoPlayActiveRef.current) return;
-    
-    const unitPath = selectedUnit === 'all' ? '/all' : `/unit${selectedUnit}`;
-    const mode = reverseMode ? '/en-ja' : '/ja-en';
-    const params: Record<string, string> = {
-      index: currentIndex.toString(),
-      show: showEnglish.toString(),
-    };
-    
-    if (isRandom) {
-      params.random = 'true';
-    }
-    
-    updateURL(unitPath + mode, params);
-  }, [selectedUnit, reverseMode, currentIndex, showEnglish, isRandom, loading, showUnitList]);
-
-  // ユニット一覧表示状態変更時にURLを更新
-  useEffect(() => {
-    if (loading || showUnitList === null) return;
-    
-    const params: Record<string, string> = {
-      showEN: showListEN.toString(),
-      showJA: showListJA.toString(),
-    };
-    
-    updateURL(`/unit${showUnitList}/list`, params);
-  }, [showUnitList, showListEN, showListJA, loading]);
+  }, [restoreStateFromURL]);
 
   // ユニット選択時
   const handleSelectUnit = async (unit: SelectedUnit) => {
@@ -278,87 +214,14 @@ function App() {
     setIsAutoPlay(prev => !prev);
   }, []);
 
-  // 自動再生を停止する関数
-  const stopAutoPlay = useCallback(() => {
-    autoPlayActiveRef.current = false;
-    if (autoPlayTimerRef.current) {
-      clearTimeout(autoPlayTimerRef.current);
-      autoPlayTimerRef.current = null;
-    }
-    cancelSpeech();
-  }, [cancelSpeech]);
-
-  // 1つのフレーズの自動再生シーケンスを実行
-  const runAutoPlaySequence = useCallback((phraseIndex: number) => {
-    // 自動再生が無効化されていたら停止
-    if (!autoPlayActiveRef.current) return;
-    
-    const phrase = displayPhrases[phraseIndex];
-    if (!phrase) {
-      // フレーズがない = 終了
-      setIsAutoPlay(false);
-      setSelectedUnit(null);
-      setCurrentIndex(0);
-      setShowEnglish(false);
-      autoPlayActiveRef.current = false;
-      return;
-    }
-
-    // 現在のインデックスを更新（stateとrefの両方）
-    currentIndexRef.current = phraseIndex;
-    setCurrentIndex(phraseIndex);
-    setShowEnglish(false);
-
-    // Step 1: 最初の言語を読み上げ
-    const firstLang = reverseMode ? 'en' : 'ja';
-    const firstText = reverseMode ? phrase.EN : phrase.JA;
-
-    speak(firstText, firstLang, () => {
-      if (!autoPlayActiveRef.current) return;
-      
-      // Step 2: 遅延後に答えを表示
-      autoPlayTimerRef.current = setTimeout(() => {
-        if (!autoPlayActiveRef.current) return;
-        
-        // 現在のインデックスを再確認して状態を更新
-        setCurrentIndex(currentIndexRef.current);
-        setShowEnglish(true);
-        
-        // Step 3: 答えの言語を読み上げ
-        const secondLang = reverseMode ? 'ja' : 'en';
-        const secondText = reverseMode ? phrase.JA : phrase.EN;
-        
-        speak(secondText, secondLang, () => {
-          if (!autoPlayActiveRef.current) return;
-          
-          // Step 4: 遅延後に次のフレーズへ
-          autoPlayTimerRef.current = setTimeout(() => {
-            if (!autoPlayActiveRef.current) return;
-            
-            const nextIndex = currentIndexRef.current + 1;
-            if (nextIndex < displayPhrases.length) {
-              runAutoPlaySequence(nextIndex);
-            } else {
-              // 最後のフレーズなので終了
-              setIsAutoPlay(false);
-              setSelectedUnit(null);
-              setCurrentIndex(0);
-              setShowEnglish(false);
-              autoPlayActiveRef.current = false;
-            }
-          }, settingsRef.current.delayBeforeNext);
-        });
-      }, settingsRef.current.delayBeforeAnswer);
-    });
-  }, [displayPhrases, reverseMode, speak]);
+  // isAutoPlayがtrueになったら自動再生シーケンスを開始
   useEffect(() => {
     if (isAutoPlay && selectedUnit !== null && showUnitList === null && !autoPlayActiveRef.current) {
-      autoPlayActiveRef.current = true;
-      runAutoPlaySequence(currentIndex);
+      startAutoPlay(currentIndex);
     } else if (!isAutoPlay) {
       stopAutoPlay();
     }
-  }, [isAutoPlay]);
+  }, [isAutoPlay, selectedUnit, showUnitList, currentIndex, startAutoPlay, stopAutoPlay]);
 
   // 自動再生中に画面を離れたら停止
   useEffect(() => {
