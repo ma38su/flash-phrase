@@ -31,7 +31,7 @@ export const SPEECH_CONFIG: Record<Language, { language: string; preferredVoices
 // 自動再生モードの設定
 export const AUTO_PLAY_CONFIG = {
   // 最初の読み上げ完了後、答えを表示するまでの待機時間（ミリ秒）
-  DELAY_BEFORE_ANSWER: 5000,
+  DELAY_BEFORE_ANSWER: 2000,
   // 答えの読み上げ完了後、次のフレーズに移動するまでの待機時間（ミリ秒）
-  DELAY_BEFORE_NEXT: 3000,
+  DELAY_BEFORE_NEXT: 1000,
 } as const;
