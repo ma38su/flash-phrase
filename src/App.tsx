@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import './App.css'
 import UnitSelect from './components/UnitSelect'
 import PhraseCard from './components/PhraseCard'
@@ -255,9 +255,9 @@ function App() {
   }
 
   // 自動再生モードのトグル
-  const toggleAutoPlay = () => {
+  const toggleAutoPlay = useCallback(() => {
     setIsAutoPlay(prev => !prev);
-  }
+  }, []);
 
   // 自動再生モードのロジック
   useEffect(() => {
@@ -318,7 +318,7 @@ function App() {
     }
 
     return cleanup;
-  }, [isAutoPlay, selectedUnit, showUnitList, currentIndex, showEnglish, reverseMode, currentPhrases]);
+  }, [isAutoPlay, selectedUnit, showUnitList, currentIndex, showEnglish, reverseMode, currentPhrases, speak]);
 
 
   // ユニット選択前画面
