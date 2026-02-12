@@ -12,6 +12,16 @@ export const UNIT_FILES: UnitFile[] = [
   { unitNumber: 8, filepath: '/flash-phrase/unit8.csv' },
   { unitNumber: 9, filepath: '/flash-phrase/unit9.csv' },
   { unitNumber: 10, filepath: '/flash-phrase/unit10.csv' },
+  { unitNumber: 11, filepath: '/flash-phrase/unit11.csv' },
+  { unitNumber: 12, filepath: '/flash-phrase/unit12.csv' },
+  { unitNumber: 13, filepath: '/flash-phrase/unit13.csv' },
+  { unitNumber: 14, filepath: '/flash-phrase/unit14.csv' },
+  { unitNumber: 15, filepath: '/flash-phrase/unit15.csv' },
+  { unitNumber: 16, filepath: '/flash-phrase/unit16.csv' },
+  { unitNumber: 17, filepath: '/flash-phrase/unit17.csv' },
+  { unitNumber: 18, filepath: '/flash-phrase/unit18.csv' },
+  { unitNumber: 19, filepath: '/flash-phrase/unit19.csv' },
+  { unitNumber: 20, filepath: '/flash-phrase/unit20.csv' },
 ];
 
 // 音声合成の設定
