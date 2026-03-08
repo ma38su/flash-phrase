@@ -6,7 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   base: '/flash-phrase/',
   build: {
-    outDir: 'docs', // 出力先を docs に変更
+    outDir: 'dist',
   },
   plugins: [
     react({
